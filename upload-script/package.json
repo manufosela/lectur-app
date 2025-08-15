@@ -1,0 +1,24 @@
+{
+  "name": "epub-uploader",
+  "version": "1.0.0",
+  "description": "Script para subir libros EPUB a Firebase y S3",
+  "main": "upload-books.js",
+  "type": "module",
+  "scripts": {
+    "upload": "node upload-books.js",
+    "test": "node test-epub.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "aws-sdk": "^2.1500.0",
+    "jszip": "^3.10.1",
+    "xml2js": "^0.6.2",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {},
+  "keywords": ["epub", "firebase", "s3", "upload"],
+  "author": "Tu nombre",
+  "license": "MIT"
+}

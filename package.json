@@ -1,0 +1,17 @@
+{
+  "name": "lectur-app-astro",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "deploy": "npm run build && firebase deploy",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "serve": "firebase serve"
+  },
+  "dependencies": {
+    "astro": "^5.13.0"
+  }
+}

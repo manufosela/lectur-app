@@ -1,0 +1,899 @@
+/**
+ * Copyright 2023 manufosela.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+:root {
+  --header-height: 10vh;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estilos para la pantalla de login */
+.login-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.login-container {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-header {
+  margin-bottom: 2rem;
+}
+
+.login-logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1rem;
+}
+
+.login-title {
+  color: #333;
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  color: #666;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+.login-description {
+  color: #555;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.google-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.google-login-btn:hover {
+  background: #f8f9fa;
+  border-color: #d0d0d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.google-login-btn:active {
+  transform: translateY(0);
+}
+
+.google-icon {
+  flex-shrink: 0;
+}
+
+.login-error {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #a00;
+}
+
+.login-error.hidden {
+  display: none;
+}
+
+/* Ocultar la aplicación principal cuando se muestre el login */
+.login-screen:not(.hidden) ~ main {
+  display: none;
+}
+
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+header {
+  display: grid;
+  background-color: #1e90ff;
+  color: white;
+  grid-template-columns: 1fr 5fr 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "logo title actions";
+  height: var(--header-height);
+  padding: 10px !important;
+  align-items: center;
+}
+.title {
+  grid-area: title;
+  text-align: center;
+  padding: 10px;
+  height: var(--header-height);
+}
+.logo {
+  grid-area: logo;
+  padding: 10px;
+}
+
+.header-actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 10px;
+}
+
+.user-email {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.logout-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
+#area {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Permite que el contenedor se encoja */
+}
+
+#libro {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  background: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#libro .epub-container {
+  width: 100%;
+  height: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Estilos para los controles de navegación */
+.nav-btn {
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  background: rgba(0, 123, 255, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+}
+
+.nav-btn:hover {
+  background: rgba(0, 86, 179, 0.9);
+  transform: scale(1.05);
+}
+
+.nav-btn:active {
+  transform: scale(0.95);
+}
+
+.nav-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
+}
+
+/* Estilos para el lector EPUB personalizado */
+.epub-reader {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #f8f9fa;
+}
+
+.epub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.book-info h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.book-author {
+  margin: 0.25rem 0 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.chapter-info {
+  font-weight: bold;
+  color: #007bff;
+  padding: 0.5rem 1rem;
+  background: #e7f3ff;
+  border-radius: 4px;
+}
+
+.epub-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  background: white;
+  margin: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  line-height: 1.6;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #000; /* Texto negro para mejor legibilidad */
+}
+
+.epub-content:hover {
+  background: #fafafa;
+}
+
+.epub-content h1, .epub-content h2, .epub-content h3 {
+  color: #000; /* Títulos en negro */
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.epub-content p {
+  margin-bottom: 1rem;
+  text-align: justify;
+  color: #000; /* Párrafos en negro */
+}
+
+/* Asegurar que todo el texto dentro del contenido EPUB sea negro */
+.epub-content * {
+  color: #000 !important;
+}
+
+/* Estilos para mensajes de error */
+.epub-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: #f8f9fa;
+}
+
+.error-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+  max-width: 500px;
+}
+
+.error-btn {
+  padding: 0.5rem 1rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.error-btn:hover {
+  background: #c82333;
+}
+.closeBtn {
+  z-index: 4;
+  position: fixed;
+  width: 2rem;
+  right: 0;
+  height: 2.5rem;
+  padding: 0.5rem;
+  margin: 0.5rem 1rem;
+  display: none; /* Oculto por defecto */
+}
+
+/* Solo mostrar cuando #libro esté visible */
+#libro:not(.hidden) ~ .closeBtn {
+  display: block;
+}
+
+.epub-view > iframe {
+  color: white;
+  background: light;
+}
+.epub-view > iframe > html > body {
+  color: white;
+  background: black;
+}
+
+.light {
+  background: #fff;
+  color: #000;
+}
+
+.books {
+  flex: 1;
+  overflow: auto;
+  min-height: 200px; /* Altura mínima para que siempre se vea algo */
+}
+
+.book-tab-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+}
+
+.book-tab {
+  width: 40rem;
+  max-width: 90vw;
+  height: 40rem;
+  max-height: 90vh;
+  border: 2px solid #000;
+  border-radius: 10px;
+  overflow: auto;
+  background: #fff;
+  padding: 1rem;
+}
+
+.book-tab .grid {
+  grid-template-columns: 1fr 3fr;
+  grid-template-areas: "label field";
+}
+
+.book-tab .grid .label {
+  grid-area: label;
+}
+
+.book-tab .grid .field {
+  grid-area: field;
+}
+
+.btn-close-book-tab {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.5rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 2rem;
+}
+
+.hidden {
+  display: none;
+  visibility: hidden;
+}
+
+.z-depth-2 {
+  z-index: 2;
+}
+
+/*** OVERLAY ***/
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.loader {
+  border: 16px solid #f3f3f3;
+  border-top: 16px solid #3498db;
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Estilos para el índice alfabético */
+.alphabet-index {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: var(--pico-card-background-color, #f8f9fa);
+  border-radius: var(--pico-border-radius, 8px);
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #e9ecef;
+  overflow-x: auto;
+}
+
+.letter-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.25rem 0.5rem;
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.letter-link:hover {
+  color: #0056b3;
+  text-decoration: underline;
+  transform: scale(1.1);
+}
+
+.letter-link.active {
+  color: #0056b3;
+  text-decoration: underline;
+  font-weight: 900;
+}
+
+.search-container {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.search-container summary {
+  cursor: pointer;
+  font-weight: bold;
+  user-select: none;
+  margin-bottom: 0;
+}
+
+.search-form {
+  margin-top: 1rem;
+}
+
+.search-form .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.current-filter {
+  padding: 0.75rem;
+  background: #e3f2fd;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid #2196f3;
+}
+
+.current-filter.hidden {
+  display: none;
+}
+
+/* Estilos para el historial de lectura */
+.reading-history {
+  margin: 1rem 0;
+}
+
+.history-container {
+  background: #f0f8ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.history-container summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: #0066cc;
+  user-select: none;
+  margin-bottom: 0;
+}
+
+.history-container summary:hover {
+  color: #004499;
+}
+
+.history-list {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  max-height: 300px; /* Limitar altura máxima */
+  overflow-y: auto; /* Scroll si hay muchos libros */
+}
+
+.history-item {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  transition: box-shadow 0.2s;
+}
+
+.history-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.history-title {
+  font-weight: bold;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.history-progress {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.history-date {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.history-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.history-btn {
+  padding: 0.25rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.continue-btn {
+  background: #28a745;
+  color: white;
+}
+
+.continue-btn:hover {
+  background: #218838;
+}
+
+.delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #c82333;
+}
+
+.empty-history {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 1rem;
+}
+
+/* Footer */
+.app-footer {
+  background: #2c3e50;
+  color: white;
+  padding: 1rem;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.footer-content {
+  text-align: center;
+}
+
+.footer-content p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.footer-info {
+  opacity: 0.8;
+  font-size: 0.8rem !important;
+}
+
+@media (max-width: 768px) {
+  .alphabet-index {
+    font-size: 0.9rem;
+    gap: 0.3rem;
+  }
+  
+  .letter-link {
+    min-width: 1.5rem;
+    padding: 0.2rem 0.3rem;
+    font-size: 0.75rem;
+  }
+  
+  .search-form .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .history-item {
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+  }
+  
+  .history-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .app-footer {
+    padding: 0.75rem;
+  }
+  
+  .footer-content p {
+    font-size: 0.8rem;
+  }
+}
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background-color: #fefefe;
+  padding: 2rem;
+  border: 1px solid #888;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  animation: modalFadeIn 0.3s;
+  color: #000; /* Texto negro para legibilidad */
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-close {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #aaa;
+  transition: color 0.3s;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+  color: #000;
+}
+
+.modal-body p {
+  margin: 0.5rem 0;
+  color: #000;
+}
+
+.modal-description {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.modal-description h3 {
+  margin-bottom: 0.5rem;
+  color: #000;
+}
+
+.modal-content h2 {
+  color: #000;
+}
+
+/* Asegurar que todo el texto del modal sea negro */
+.modal-content * {
+  color: #000;
+}
+
+.modal-links {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.modal-links a {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.modal-links a:hover {
+  background-color: #0056b3;
+}
+
+.modal-links a.hidden {
+  display: none;
+}
+
+/* ----------------------------------------------
+ * Generated by Animista on 2023-2-6 7:54:50
+ * Licensed under FreeBSD License.
+ * See http://animista.net/license for more info. 
+ * w: http://animista.net, t: @cssanimista
+ * ---------------------------------------------- */
+/**
+ * ----------------------------------------
+ * animation scale-in-center
+ * ----------------------------------------
+ */
+.scale-in-center {
+  -webkit-animation: scale-in-center 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)
+    both;
+  animation: scale-in-center 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+@-webkit-keyframes scale-in-center {
+  0% {
+    -webkit-transform: scale(0);
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: scale(1);
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes scale-in-center {
+  0% {
+    -webkit-transform: scale(0);
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: scale(1);
+    transform: scale(1);
+    opacity: 1;
+  }
+}
