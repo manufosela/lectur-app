@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "upload": "node upload-books.js",
-    "test": "node test-epub.js"
+    "test": "node test-epub.js",
+    "check": "node smart-upload.js --check",
+    "sync": "node smart-upload.js --sync"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0",
