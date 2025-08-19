@@ -632,10 +632,17 @@ const getBook = async (bookPath, startChapter = 0) => {
   loading(true);
   currentBookPath = bookPath; // Guardar la ruta del libro actual
   
-  fetch(`https://europe-west1-lectur-app.cloudfunctions.net/downloadFile?fileName=${bookPath}`,
-    {
-      method: "GET"
-    })
+  // Solo S3 - sin fallback a Firebase
+  const s3BucketUrl = 'https://lectur-app-personal.s3.eu-west-1.amazonaws.com';
+  const bookUrl = `${s3BucketUrl}/${encodeURIComponent(bookPath)}`;
+  
+  console.log('📚 Descargando de S3:', bookPath);
+  console.log('🔗 URL:', bookUrl);
+  
+  fetch(bookUrl, {
+    method: "GET",
+    mode: 'cors'
+  })
   .then(response => response.blob())
   .then(blob => {
     loading(false);

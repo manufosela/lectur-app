@@ -8,7 +8,13 @@
     "upload": "node upload-books.js",
     "test": "node test-epub.js",
     "check": "node smart-upload.js --check",
-    "sync": "node smart-upload.js --sync"
+    "sync": "node smart-upload.js --sync",
+    "migrate": "node migrate-firebase-to-s3.js",
+    "migrate-batch": "node migrate-firebase-to-s3-batch.js",
+    "migrate-status": "node migrate-firebase-to-s3-batch.js --status",
+    "migrate-reset": "node migrate-firebase-to-s3-batch.js --reset",
+    "sync-nas": "node sync-new-books.js",
+    "sync-nas-auto": "node sync-new-books.js --auto"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0",

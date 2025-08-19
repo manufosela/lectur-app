@@ -50,6 +50,17 @@ async function fileExistsInS3(s3, bucketName, key) {
 /**
  * Sube un archivo EPUB a S3
  * @param {string} filePath - Ruta local del archivo
+ * @param {string} fileName - Nombre del archivo
+ * @param {Object} metadata - Metadatos del libro
+ * @returns {Promise<boolean>}
+ */
+export async function uploadToS3(filePath, fileName, metadata) {
+  return uploadBookToS3(filePath, metadata);
+}
+
+/**
+ * Sube un archivo EPUB a S3
+ * @param {string} filePath - Ruta local del archivo
  * @param {Object} metadata - Metadatos del libro
  * @returns {Promise<boolean>}
  */
