@@ -240,6 +240,13 @@ header {
   padding: 10px;
   height: var(--header-height);
 }
+
+.books-count {
+  font-size: 0.6em;
+  font-weight: normal;
+  opacity: 0.9;
+  margin-left: 0.5rem;
+}
 .logo {
   grid-area: logo;
   padding: 10px;

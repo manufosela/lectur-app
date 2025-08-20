@@ -1,0 +1,26 @@
+# Archivos que fallaron durante la migración a S3
+# Error: "The request signature we calculated does not match the signature you provided"
+# Estos archivos tienen caracteres especiales que causan problemas con la firma de AWS
+
+Albert Bertran Bas - La memoria eres tú.epub
+Apocalipsis Z - 2 Los días oscuros - Manel Loureiro.epub
+Benvolguda - Empar Moliner .epub
+Habitaciones separadas - Luis García Montero.epub
+Habitación 501. Your secret is mine - Carla Marpe.epub
+Hábitos atómicos - James Clear.epub
+La historia secreta del señor White - Juan Gómez-Jurado.epub
+La invasión - Jack London.epub
+La invasión de las Tinieblas - Glenn Cooper.epub
+La mirada quieta (de Pérez Galdós) - Mario Vargas Llosa.epub
+La muerte contada por un sapiens a un neandertal - Juan José Millás.epub
+La mujer justa - Sándor Márai.epub
+La noche de las panteras - Juan González Mesa.epub
+La noche de los niños - Toni Morrison.epub
+La oración de la rana - Anthony de Mello.epub
+La oración del tomate - Elisa Mayo.epub
+Platos típicos de Asturias - Maria Luisa García.epub
+Sesenta semanas en el trópico - Antonio Escohotado.epub
+Sueños en la casa de té - Justin Hill.epub
+
+# Total: 19 archivos fallidos de 101,998 (0.019%)
+# Estos archivos necesitan ser renombrados eliminando caracteres especiales antes de subirlos a S3

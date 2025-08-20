@@ -943,6 +943,7 @@ const initializeApp = async () => {
     
     // Actualizar contadores
     document.getElementById("num-libros").textContent = booksNameList.length;
+    document.getElementById("header-num-libros").textContent = booksNameList.length.toLocaleString('es-ES');
     document.getElementById("num-autores").textContent = _autorsNameList.length;
     
     // NO mostrar libros inicialmente - solo mostrar cuando se haga clic o búsqueda
