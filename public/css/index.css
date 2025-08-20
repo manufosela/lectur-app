@@ -5,6 +5,76 @@
 
 :root {
   --header-height: 10vh;
+  
+  /* Tema claro (por defecto) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-card: #ffffff;
+  --bg-header: #1e90ff;
+  --bg-footer: #2c3e50;
+  --bg-modal: #fefefe;
+  --bg-button: rgba(255, 255, 255, 0.2);
+  --bg-button-hover: rgba(255, 255, 255, 0.3);
+  --bg-search: #f8f9fa;
+  --bg-history: #f0f8ff;
+  --bg-filter: #e3f2fd;
+  --bg-epub: #f8f9fa;
+  --bg-epub-content: #ffffff;
+  
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #666666;
+  --text-light: #888888;
+  --text-header: #ffffff;
+  --text-link: #007bff;
+  --text-link-hover: #0056b3;
+  
+  --border-primary: #e9ecef;
+  --border-secondary: #ddd;
+  --border-modal: #888;
+  --border-search: #e9ecef;
+  --border-history: #b3d9ff;
+  --border-filter: #2196f3;
+  
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.1);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.1);
+  --shadow-button: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  /* Tema oscuro */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-card: #333333;
+  --bg-header: #0f4c75;
+  --bg-footer: #1a252f;
+  --bg-modal: #2d2d2d;
+  --bg-button: rgba(255, 255, 255, 0.1);
+  --bg-button-hover: rgba(255, 255, 255, 0.2);
+  --bg-search: #2d2d2d;
+  --bg-history: #1a2332;
+  --bg-filter: #1a3a5c;
+  --bg-epub: #1a1a1a;
+  --bg-epub-content: #2d2d2d;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted: #b0b0b0;
+  --text-light: #888888;
+  --text-header: #ffffff;
+  --text-link: #4fc3f7;
+  --text-link-hover: #29b6f6;
+  
+  --border-primary: #404040;
+  --border-secondary: #555555;
+  --border-modal: #555555;
+  --border-search: #404040;
+  --border-history: #4a6741;
+  --border-filter: #1976d2;
+  
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.5);
+  --shadow-button: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 body {
   margin: 0;
@@ -14,6 +84,9 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Estilos para la pantalla de login */
@@ -31,14 +104,16 @@ body {
 }
 
 .login-container {
-  background: white;
+  background: var(--bg-card);
+  color: var(--text-primary);
   border-radius: 16px;
   padding: 2.5rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-modal);
   text-align: center;
   max-width: 400px;
   width: 90%;
   animation: slideInUp 0.6s ease-out;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 @keyframes slideInUp {
@@ -63,20 +138,20 @@ body {
 }
 
 .login-title {
-  color: #333;
+  color: var(--text-secondary);
   font-size: 2rem;
   margin: 0 0 0.5rem 0;
   font-weight: 700;
 }
 
 .login-subtitle {
-  color: #666;
+  color: var(--text-muted);
   margin: 0 0 1rem 0;
   font-size: 1rem;
 }
 
 .login-description {
-  color: #555;
+  color: var(--text-muted);
   margin-bottom: 2rem;
   font-size: 1rem;
   line-height: 1.5;
@@ -149,14 +224,15 @@ main {
 }
 header {
   display: grid;
-  background-color: #1e90ff;
-  color: white;
+  background-color: var(--bg-header);
+  color: var(--text-header);
   grid-template-columns: 1fr 5fr 1fr;
   grid-template-rows: 1fr;
   grid-template-areas: "logo title actions";
   height: var(--header-height);
   padding: 10px !important;
   align-items: center;
+  transition: background-color 0.3s ease;
 }
 .title {
   grid-area: title;
@@ -187,10 +263,10 @@ header {
   max-width: 150px;
 }
 
-.logout-btn {
-  background: rgba(255, 255, 255, 0.2);
+.theme-toggle, .logout-btn {
+  background: var(--bg-button);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  color: var(--text-header);
   padding: 0.5rem;
   border-radius: 6px;
   cursor: pointer;
@@ -202,14 +278,33 @@ header {
   height: 40px;
 }
 
-.logout-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+.theme-toggle:hover, .logout-btn:hover {
+  background: var(--bg-button-hover);
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-1px);
 }
 
-.logout-btn:active {
+.theme-toggle:active, .logout-btn:active {
   transform: translateY(0);
+}
+
+/* Icono de luna para modo oscuro */
+[data-theme="dark"] #theme-icon {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle::after {
+  content: "🌙";
+  font-size: 16px;
+}
+
+/* Icono de sol para modo claro */
+:not([data-theme="dark"]) #theme-icon {
+  display: block;
+}
+
+:not([data-theme="dark"]) .theme-toggle::after {
+  display: none;
 }
 
 #area {
@@ -279,7 +374,8 @@ header {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: #f8f9fa;
+  background: var(--bg-epub);
+  transition: background-color 0.3s ease;
 }
 
 .epub-header {
@@ -287,51 +383,54 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
 }
 
 .book-info h2 {
   margin: 0;
   font-size: 1.25rem;
-  color: #333;
+  color: var(--text-secondary);
 }
 
 .book-author {
   margin: 0.25rem 0 0 0;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
 .chapter-info {
   font-weight: bold;
-  color: #007bff;
+  color: var(--text-link);
   padding: 0.5rem 1rem;
-  background: #e7f3ff;
+  background: var(--bg-filter);
   border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 .epub-content {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
-  background: white;
+  background: var(--bg-epub-content);
   margin: 1rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-card);
   line-height: 1.6;
   font-size: 1rem;
   cursor: pointer;
-  color: #000; /* Texto negro para mejor legibilidad */
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
 .epub-content:hover {
-  background: #fafafa;
+  background: var(--bg-secondary);
 }
 
 .epub-content h1, .epub-content h2, .epub-content h3 {
-  color: #000; /* Títulos en negro */
+  color: var(--text-secondary);
   margin-top: 2rem;
   margin-bottom: 1rem;
 }
@@ -339,12 +438,12 @@ header {
 .epub-content p {
   margin-bottom: 1rem;
   text-align: justify;
-  color: #000; /* Párrafos en negro */
+  color: var(--text-primary);
 }
 
-/* Asegurar que todo el texto dentro del contenido EPUB sea negro */
+/* Asegurar que todo el texto dentro del contenido EPUB use las variables de tema */
 .epub-content * {
-  color: #000 !important;
+  color: inherit !important;
 }
 
 /* Estilos para mensajes de error */
@@ -508,12 +607,13 @@ header {
   gap: 0.5rem;
   margin: 1rem 0;
   padding: 0.75rem;
-  background: var(--pico-card-background-color, #f8f9fa);
-  border-radius: var(--pico-border-radius, 8px);
+  background: var(--bg-secondary);
+  border-radius: 8px;
   justify-content: center;
   align-items: center;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-primary);
   overflow-x: auto;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .letter-link {
@@ -522,7 +622,7 @@ header {
   justify-content: center;
   min-width: 2rem;
   padding: 0.25rem 0.5rem;
-  color: #007bff;
+  color: var(--text-link);
   text-decoration: none;
   font-weight: bold;
   font-size: 14px;
@@ -531,13 +631,13 @@ header {
 }
 
 .letter-link:hover {
-  color: #0056b3;
+  color: var(--text-link-hover);
   text-decoration: underline;
   transform: scale(1.1);
 }
 
 .letter-link.active {
-  color: #0056b3;
+  color: var(--text-link-hover);
   text-decoration: underline;
   font-weight: 900;
 }
@@ -545,9 +645,10 @@ header {
 .search-container {
   margin: 1rem 0;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--bg-search);
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-search);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .search-container summary {
@@ -569,12 +670,14 @@ header {
 
 .current-filter {
   padding: 0.75rem;
-  background: #e3f2fd;
+  background: var(--bg-filter);
   border-radius: 8px;
   margin-bottom: 1rem;
   text-align: center;
   font-weight: bold;
-  border: 1px solid #2196f3;
+  border: 1px solid var(--border-filter);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
 .current-filter.hidden {
@@ -587,23 +690,25 @@ header {
 }
 
 .history-container {
-  background: #f0f8ff;
-  border: 1px solid #b3d9ff;
+  background: var(--bg-history);
+  border: 1px solid var(--border-history);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
+  transition: all 0.3s ease;
 }
 
 .history-container summary {
   cursor: pointer;
   font-weight: bold;
-  color: #0066cc;
+  color: var(--text-link);
   user-select: none;
   margin-bottom: 0;
+  transition: color 0.2s ease;
 }
 
 .history-container summary:hover {
-  color: #004499;
+  color: var(--text-link-hover);
 }
 
 .history-list {
@@ -615,19 +720,19 @@ header {
 }
 
 .history-item {
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--bg-card);
+  border: 1px solid var(--border-secondary);
   border-radius: 6px;
   padding: 0.75rem;
   display: grid;
   grid-template-columns: 1fr auto auto;
   gap: 1rem;
   align-items: center;
-  transition: box-shadow 0.2s;
+  transition: all 0.2s ease;
 }
 
 .history-item:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-card);
 }
 
 .history-info {
@@ -638,17 +743,17 @@ header {
 
 .history-title {
   font-weight: bold;
-  color: #333;
+  color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
 .history-progress {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.85rem;
 }
 
 .history-date {
-  color: #888;
+  color: var(--text-light);
   font-size: 0.8rem;
 }
 
@@ -693,11 +798,12 @@ header {
 
 /* Footer */
 .app-footer {
-  background: #2c3e50;
-  color: white;
+  background: var(--bg-footer);
+  color: var(--text-header);
   padding: 1rem;
   margin-top: auto;
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 }
 
 .footer-content {
@@ -769,9 +875,10 @@ header {
 }
 
 .modal-content {
-  background-color: #fefefe;
+  background-color: var(--bg-modal);
+  color: var(--text-primary);
   padding: 2rem;
-  border: 1px solid #888;
+  border: 1px solid var(--border-modal);
   border-radius: 8px;
   width: 90%;
   max-width: 600px;
@@ -779,7 +886,7 @@ header {
   overflow-y: auto;
   position: relative;
   animation: modalFadeIn 0.3s;
-  color: #000; /* Texto negro para legibilidad */
+  transition: all 0.3s ease;
 }
 
 @keyframes modalFadeIn {
@@ -806,32 +913,32 @@ header {
 
 .modal-close:hover,
 .modal-close:focus {
-  color: #000;
+  color: var(--text-primary);
 }
 
 .modal-body p {
   margin: 0.5rem 0;
-  color: #000;
+  color: var(--text-primary);
 }
 
 .modal-description {
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-primary);
 }
 
 .modal-description h3 {
   margin-bottom: 0.5rem;
-  color: #000;
+  color: var(--text-primary);
 }
 
 .modal-content h2 {
-  color: #000;
+  color: var(--text-primary);
 }
 
-/* Asegurar que todo el texto del modal sea negro */
+/* Asegurar que todo el texto del modal use las variables */
 .modal-content * {
-  color: #000;
+  color: inherit;
 }
 
 .modal-links {

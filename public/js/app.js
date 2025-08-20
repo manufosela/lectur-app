@@ -1061,6 +1061,12 @@ function initializeEventListeners() {
     logoutBtn.addEventListener('click', handleLogout);
   }
   
+  // Event listener para el cambio de tema
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+  }
+  
   // Event listener para el índice alfabético
   const alphabetIndex = document.getElementById('alphabet-index');
   if (alphabetIndex) {
@@ -1105,5 +1111,125 @@ function initializeEventListeners() {
         closeBookInfoModal();
       }
     });
+  }
+  
+  // Inicializar tema
+  initializeTheme();
+}
+
+// Funciones para el sistema de temas
+const THEME_STORAGE_KEY = 'lectur-app-theme';
+
+function getStoredTheme() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Error accediendo localStorage para tema:', error);
+    return null;
+  }
+}
+
+function setStoredTheme(theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (error) {
+    console.warn('Error guardando tema en localStorage:', error);
+  }
+}
+
+function applyTheme(theme) {
+  const body = document.body;
+  const html = document.documentElement;
+  
+  if (theme === 'dark') {
+    html.setAttribute('data-theme', 'dark');
+    body.setAttribute('data-theme', 'dark');
+  } else {
+    html.removeAttribute('data-theme');
+    body.removeAttribute('data-theme');
+  }
+  
+  // Actualizar icono del botón
+  updateThemeButtonIcon(theme);
+}
+
+function updateThemeButtonIcon(theme) {
+  const themeToggle = document.getElementById('theme-toggle');
+  const themeIcon = document.getElementById('theme-icon');
+  
+  if (!themeToggle) return;
+  
+  if (theme === 'dark') {
+    themeToggle.title = 'Cambiar a modo claro';
+    if (themeIcon) {
+      // En modo oscuro, mostrar icono de sol
+      themeIcon.innerHTML = `
+        <circle cx="12" cy="12" r="5"></circle>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+      `;
+    }
+  } else {
+    themeToggle.title = 'Cambiar a modo oscuro';
+    if (themeIcon) {
+      // En modo claro, mostrar icono de luna
+      themeIcon.innerHTML = `
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      `;
+    }
+  }
+}
+
+function getCurrentTheme() {
+  return document.documentElement.hasAttribute('data-theme') ? 'dark' : 'light';
+}
+
+function toggleTheme() {
+  const currentTheme = getCurrentTheme();
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  
+  applyTheme(newTheme);
+  setStoredTheme(newTheme);
+  
+  console.log(`🎨 Tema cambiado a: ${newTheme}`);
+}
+
+function initializeTheme() {
+  // Obtener tema guardado o usar preferencia del sistema
+  let theme = getStoredTheme();
+  
+  if (!theme) {
+    // Si no hay tema guardado, usar preferencia del sistema
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      theme = 'dark';
+    } else {
+      theme = 'light';
+    }
+    
+    // Guardar la preferencia detectada
+    setStoredTheme(theme);
+  }
+  
+  // Aplicar tema
+  applyTheme(theme);
+  
+  // Escuchar cambios en la preferencia del sistema
+  if (window.matchMedia) {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = (e) => {
+      // Solo cambiar si no hay tema personalizado guardado explícitamente por el usuario
+      const storedTheme = getStoredTheme();
+      if (!storedTheme) {
+        const systemTheme = e.matches ? 'dark' : 'light';
+        applyTheme(systemTheme);
+        setStoredTheme(systemTheme);
+      }
+    };
+    
+    // Usar el método apropiado según el soporte del navegador
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleSystemThemeChange);
+    } else {
+      mediaQuery.addListener(handleSystemThemeChange);
+    }
   }
 }
