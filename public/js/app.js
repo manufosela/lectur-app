@@ -1,4 +1,8 @@
-import { getBooksList, getAutorsList, getAutorsBooksList, auth, signInWithGoogle, signOut, isUserAuthorized, saveReadingProgressToFirebase, getReadingHistoryFromFirebase, removeFromHistoryFirebase } from './firebase-config.js';
+import { 
+  getBooksList, getAutorsList, getAutorsBooksList, 
+  auth, signInWithGoogle, signOut, isUserAuthorized, 
+  saveReadingProgressToFirebase, getReadingHistoryFromFirebase, removeFromHistoryFirebase
+} from './firebase-config.js';
 
 const lookBookUrlGOOGLE = "https://www.googleapis.com/books/v1/volumes?q=";
 
@@ -46,6 +50,11 @@ const THEME_STORAGE_KEY = 'lectur-app-theme';
   console.log = function(...args) {
     const message = String(args[0] || '');
     if (message.includes('Fetch finished loading') ||
+        message.includes('Fetch failed loading') ||
+        message.includes('XHR finished loading') ||
+        message.includes('google-analytics') ||
+        message.includes('mp/collect') ||
+        message.includes('chrome-extension') ||
         message.includes('logo64x64.png') ||
         message.includes('perf.js') ||
         message.includes('index.js') ||
@@ -66,6 +75,8 @@ const getReadingHistory = async () => {
     if (!currentUser) {
       return [];
     }
+    
+    // USAR SOLO REALTIME DATABASE para historial
     return await getReadingHistoryFromFirebase(currentUser.email);
   } catch (error) {
     console.error('Error obteniendo historial:', error);
@@ -105,7 +116,7 @@ const saveReadingProgress = (bookPath, bookTitle, author, chapterIndex, totalCha
       if (pendingSaveData) {
         console.log('💾 Guardando progreso después de inactividad...');
         
-        // Guardar en Firebase de forma no bloqueante
+        // Guardar SOLO en Firebase Realtime Database
         saveReadingProgressToFirebase(
           pendingSaveData.userEmail,
           pendingSaveData.bookPath,
@@ -895,7 +906,7 @@ const filterBooksByLetter = (letter) => {
   });
 };
 
-const handleLetterClick = (event) => {
+const handleLetterClick = async (event) => {
   event.preventDefault(); // Prevenir comportamiento por defecto del enlace
   if (!event.target.classList.contains('letter-link')) return;
   
@@ -919,7 +930,10 @@ const handleLetterClick = (event) => {
     filterText.textContent = `Letra ${letter}`;
   }
   
-  // Filtrar y mostrar libros
+  // Mostrar loading
+  document.getElementById("num-results").innerHTML = "🔄 Cargando libros...";
+  
+  // Filtrar y mostrar libros por letra (sistema original)
   const filteredBooks = filterBooksByLetter(letter);
   drawBooksList(filteredBooks);
 };
@@ -1048,6 +1062,9 @@ const initializeApp = async () => {
   try {
     // No mostrar loading aquí porque ya se maneja en onAuthStateChanged
     
+    // USAR REALTIME DATABASE (sistema original que funciona perfectamente)
+    console.log('📊 Usando Realtime Database para gestión de libros');
+    
     const [booksNameList, _autorsNameList, _autorsBooks] = await Promise.all([
       getBooksList(),
       getAutorsList(),
@@ -1097,7 +1114,7 @@ let autorsNameList = [];
 let autorsBooks = {};
 
 // Función para manejar la búsqueda
-const handleSearch = (event) => {
+const handleSearch = async (event) => {
   const searchValue = event.target.value;
   const searchMode = event.target.id;
   console.log(searchMode, searchValue);
@@ -1116,6 +1133,7 @@ const handleSearch = (event) => {
   booksList.innerHTML = "";
 
   if (searchMode === "search-by-autor" && searchValue.length > 2) {
+    // Búsqueda por autor (sistema original)
     const results = autorsNameList.filter(author => 
       getStrWithoutAccents(author).toLowerCase().includes(cleanSearchValue)
     );
@@ -1130,6 +1148,7 @@ const handleSearch = (event) => {
   }
 
   if (searchMode === "search-by-title" && searchValue.length > 2) {
+    // Búsqueda por título (sistema original)
     const filteredBooks = allBooks.filter(bookName => {
       const cleanBookTitle = getStrWithoutAccents(bookName).toLowerCase();
       return cleanBookTitle.includes(cleanSearchValue);
