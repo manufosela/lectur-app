@@ -6,6 +6,9 @@ let allBooks = [];
 let currentFilter = null;
 let currentUser = null;
 
+// Constante para sistema de temas
+const THEME_STORAGE_KEY = 'lectur-app-theme';
+
 // Filtros globales para limpiar la consola de errores irrelevantes
 (() => {
   const originalError = console.error;
@@ -70,27 +73,84 @@ const getReadingHistory = async () => {
   }
 };
 
-const saveReadingProgress = async (bookPath, bookTitle, author, chapterIndex, totalChapters) => {
+// Sistema de debounce para evitar guardados excesivos
+let saveProgressTimer = null;
+let pendingSaveData = null;
+
+const saveReadingProgress = (bookPath, bookTitle, author, chapterIndex, totalChapters) => {
+  
   try {
     if (!currentUser) {
       console.warn('No hay usuario autenticado para guardar progreso');
       return;
     }
     
-    // Guardar en Firebase
-    await saveReadingProgressToFirebase(
-      currentUser.email, 
+    // Guardar datos pendientes
+    pendingSaveData = {
       bookPath, 
       bookTitle, 
       author, 
       chapterIndex, 
-      totalChapters
-    );
+      totalChapters,
+      userEmail: currentUser.email
+    };
     
-    // Actualizar display del historial
-    await updateHistoryDisplay();
+    // Cancelar timer anterior si existe
+    if (saveProgressTimer) {
+      clearTimeout(saveProgressTimer);
+    }
+    
+    // Programar guardado después de 2 segundos de inactividad
+    saveProgressTimer = setTimeout(async () => {
+      if (pendingSaveData) {
+        console.log('💾 Guardando progreso después de inactividad...');
+        
+        // Guardar en Firebase de forma no bloqueante
+        saveReadingProgressToFirebase(
+          pendingSaveData.userEmail,
+          pendingSaveData.bookPath,
+          pendingSaveData.bookTitle,
+          pendingSaveData.author,
+          pendingSaveData.chapterIndex,
+          pendingSaveData.totalChapters
+        ).catch(error => {
+          console.warn('Error guardando progreso en Firebase:', error);
+        });
+        
+        // Actualizar display del historial de forma no bloqueante
+        updateHistoryDisplay().catch(error => {
+          console.warn('Error actualizando historial:', error);
+        });
+        
+        pendingSaveData = null;
+        saveProgressTimer = null;
+      }
+    }, 2000);
+    
   } catch (error) {
     console.error('Error guardando progreso:', error);
+  }
+};
+
+// Función para forzar guardado inmediato (al cerrar libro, cambiar página, etc.)
+const forceProgressSave = async () => {
+  if (pendingSaveData && saveProgressTimer) {
+    clearTimeout(saveProgressTimer);
+    console.log('💾 Forzando guardado inmediato...');
+    
+    await saveReadingProgressToFirebase(
+      pendingSaveData.userEmail,
+      pendingSaveData.bookPath,
+      pendingSaveData.bookTitle,
+      pendingSaveData.author,
+      pendingSaveData.chapterIndex,
+      pendingSaveData.totalChapters
+    ).catch(error => {
+      console.warn('Error en guardado forzado:', error);
+    });
+    
+    pendingSaveData = null;
+    saveProgressTimer = null;
   }
 };
 
@@ -183,16 +243,21 @@ const migrateLocalStorageToFirebase = async () => {
     
     console.log('Migrando historial de localStorage a Firebase...', historyData);
     
-    for (const item of historyData) {
-      await saveReadingProgressToFirebase(
+    // Migrar en paralelo para mayor velocidad
+    const migrationPromises = historyData.map(item => 
+      saveReadingProgressToFirebase(
         currentUser.email,
         item.bookPath,
         item.title,
         item.author,
         item.currentChapter,
         item.totalChapters
-      );
-    }
+      ).catch(error => {
+        console.warn('Error migrando item:', item.bookPath, error);
+      })
+    );
+    
+    await Promise.all(migrationPromises);
     
     // Limpiar localStorage después de la migración exitosa
     localStorage.removeItem('epub-reading-history');
@@ -632,18 +697,26 @@ const getBook = async (bookPath, startChapter = 0) => {
   loading(true);
   currentBookPath = bookPath; // Guardar la ruta del libro actual
   
-  // Solo S3 - sin fallback a Firebase
+  // Estrategia híbrida: Intentar S3 primero, luego Firebase Storage
   const s3BucketUrl = 'https://lectur-app-personal.s3.eu-west-1.amazonaws.com';
-  const bookUrl = `${s3BucketUrl}/${encodeURIComponent(bookPath)}`;
+  const s3Url = `${s3BucketUrl}/${encodeURIComponent(bookPath)}`;
   
-  console.log('📚 Descargando de S3:', bookPath);
-  console.log('🔗 URL:', bookUrl);
+  console.log('📚 Buscando libro:', bookPath);
+  console.log('🔗 Intentando S3 primero:', s3Url);
   
-  fetch(bookUrl, {
-    method: "GET",
-    mode: 'cors'
+  // 1. Intentar S3 primero
+  fetch(s3Url, {
+    method: "GET"
   })
-  .then(response => response.blob())
+  .then(response => {
+    if (response.ok) {
+      console.log('✅ Encontrado en S3');
+      return response.blob();
+    } else {
+      console.log('⚠️ No encontrado en S3, intentando Firebase Storage...');
+      throw new Error('NotFoundInS3');
+    }
+  })
   .then(blob => {
     loading(false);
     if (bookPath.endsWith('.epub')) {
@@ -655,8 +728,42 @@ const getBook = async (bookPath, startChapter = 0) => {
     }
   })
   .catch(error => {
-    console.error('Error descargando libro:', error);
-    loading(false);
+    if (error.message === 'NotFoundInS3') {
+      // 2. Fallback a Firebase Storage usando Cloud Function (método original)
+      console.log('🔥 Intentando Firebase Storage con Cloud Function...');
+      
+      const cloudFunctionUrl = `https://europe-west1-lectur-app.cloudfunctions.net/downloadFile?fileName=${encodeURIComponent(bookPath)}`;
+      
+      fetch(cloudFunctionUrl, {
+        method: "GET"
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Error HTTP ${response.status} en Cloud Function`);
+        }
+        console.log('✅ Encontrado en Firebase Storage via Cloud Function');
+        return response.blob();
+      })
+      .then(blob => {
+        loading(false);
+        if (bookPath.endsWith('.epub')) {
+          document.getElementById('libro').classList.remove('hidden');
+          document.getElementById('main').classList.add('hidden');
+          getEpubFile(blob, startChapter);
+        } else if (bookPath.endsWith('.pdf')) {
+          console.log('ES PDF...');
+        }
+      })
+      .catch(firebaseError => {
+        console.error('Error en Firebase Storage:', firebaseError);
+        loading(false);
+        alert(`❌ Libro no encontrado\n\nEl libro "${bookPath}" no se pudo cargar desde ningún almacenamiento.\n\nError: ${firebaseError.message}`);
+      });
+    } else {
+      console.error('Error descargando de S3:', error);
+      loading(false);
+      alert(`❌ Error descargando libro\n\n${error.message}`);
+    }
   });
 };
 
@@ -890,7 +997,10 @@ const handleBookClick = async (event) => {
   }
 };
 
-const closeBookReadings = () => {
+const closeBookReadings = async () => {
+  // Forzar guardado antes de cerrar
+  await forceProgressSave();
+  
   document.getElementById('libro').classList.add('hidden');
   document.getElementById('main').classList.remove('hidden');
   
@@ -925,6 +1035,14 @@ const closeBookReadings = () => {
   // Actualizar historial de lectura para mostrar el libro recién leído
   updateHistoryDisplay();
 };
+
+// Guardar progreso al salir de la página
+window.addEventListener('beforeunload', async () => {
+  if (pendingSaveData) {
+    // Forzar guardado final
+    await forceProgressSave();
+  }
+});
 
 const initializeApp = async () => {
   try {
@@ -1119,7 +1237,6 @@ function initializeEventListeners() {
 }
 
 // Funciones para el sistema de temas
-const THEME_STORAGE_KEY = 'lectur-app-theme';
 
 function getStoredTheme() {
   try {
