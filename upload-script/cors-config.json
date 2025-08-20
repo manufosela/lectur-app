@@ -1,0 +1,15 @@
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedOrigins": [
+      "http://localhost:4321",
+      "http://localhost:5000",
+      "https://lectur-app.web.app",
+      "https://lectur-app.firebaseapp.com",
+      "*"
+    ],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]
