@@ -25,3 +25,7 @@ public/js/firebase-config.js
 
 # jetbrains setting folder
 .idea/
+
+# Firebase debug and cache files
+firebase-debug.log
+.firebase/
