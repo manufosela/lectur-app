@@ -3,15 +3,47 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="LecturAPP">
+  <!-- Control inmediato de UI inicial -->
+  <script>
+    (function() {
+      // Flag para determinar qué pantalla mostrar inmediatamente
+      let isAuthenticated = false;
+      
+      try {
+        // Verificar si hay estado de autenticación guardado
+        isAuthenticated = localStorage.getItem('lectur-app-auth-state') === 'authenticated';
+      } catch (error) {
+        console.warn('Error accediendo a localStorage:', error);
+        isAuthenticated = false;
+      }
+      
+      // Aplicar estilos inmediatamente basado en el flag
+      document.addEventListener('DOMContentLoaded', function() {
+        const loginScreen = document.getElementById('login-screen');
+        const categoryMenu = document.getElementById('category-menu');
+        
+        if (isAuthenticated) {
+          loginScreen.style.display = 'none';
+          categoryMenu.style.display = 'flex';
+          console.log('🎯 Mostrando menú directamente - usuario previamente autenticado');
+        } else {
+          loginScreen.style.display = 'flex';
+          categoryMenu.style.display = 'none';
+          console.log('🔑 Mostrando login - no hay estado de autenticación');
+        }
+      });
+    })();
+  </script>
+
   <div class="container">
     
     <!-- Pantalla de Login -->
-    <div id="login-screen" class="login-screen">
+    <div id="login-screen" class="login-screen" style="display: none;">
       <div class="login-container">
         <div class="login-header">
           <img class="login-logo" src="/images/logo64x64.png" alt="LecturAPP" />
           <h1 class="login-title">LecturAPP</h1>
-          <p class="login-subtitle">Biblioteca digital de libros EPUB</p>
+          <p class="login-subtitle">Biblioteca digital multimedia</p>
         </div>
         
         <div class="login-content">
@@ -33,168 +65,75 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </div>
     </div>
-    <main id="main">
-      <header>
-        <img class="logo" src="/images/logo64x64.png" alt="LecturAPP" />
-        <h1 class="title">LecturAPP <span class="books-count">(<span id="header-num-libros">0</span> libros)</span></h1>
-        <div class="header-actions">
-          <span id="user-email" class="user-email"></span>
-          <button id="theme-toggle" class="theme-toggle" title="Cambiar tema">
-            <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="5"></circle>
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
-            </svg>
-          </button>
-          <button id="logout-btn" class="logout-btn" title="Cerrar sesión">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16,17 21,12 16,7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </button>
+    
+    <!-- Menú Principal de Categorías -->
+    <div id="category-menu" class="category-menu" style="display: flex;">
+      <div class="category-container">
+        <header class="category-header">
+          <img class="logo clickable-logo" src="/images/logo64x64.png" alt="LecturAPP" title="Inicio" />
+          <h1 class="title">LecturAPP</h1>
+          <div class="header-actions">
+            <span id="menu-user-email" class="user-email"></span>
+            <button id="menu-theme-toggle" class="theme-toggle" title="Cambiar tema">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+              </svg>
+            </button>
+            <button id="menu-logout-btn" class="logout-btn" title="Cerrar sesión">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16,17 21,12 16,7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </button>
+          </div>
+        </header>
+        
+        <div class="category-content">
+          <h2 class="category-title">Selecciona una categoría</h2>
+          <div class="category-grid">
+            <button class="category-card" data-category="books">
+              <div class="category-icon">📚</div>
+              <h3>Libros</h3>
+              <p class="category-count"><span id="books-count">0</span> disponibles</p>
+            </button>
+            
+            <button class="category-card" data-category="audiobooks">
+              <div class="category-icon">🎧</div>
+              <h3>Audiolibros</h3>
+              <p class="category-count"><span id="audiobooks-count">0</span> disponibles</p>
+            </button>
+            
+            <button class="category-card" data-category="comics">
+              <div class="category-icon">💬</div>
+              <h3>Cómics</h3>
+              <p class="category-count"><span id="comics-count">0</span> disponibles</p>
+            </button>
+          </div>
         </div>
-      </header>
-      
-      <!-- Buscador compacto -->
-      <details class="search-container">
-        <summary>🔍 Búsqueda avanzada</summary>
-        <form id="search" class="search-form">
-          <div class="grid">
-            <div>
-              <label for="search-by-title">Por título</label>
-              <input
-                type="text"
-                id="search-by-title"
-                name="search-by-title"
-                placeholder="Buscar título..."
-              />
-              <small id="description-titulo">
-                <span id="num-libros">0</span> libros disponibles
-              </small>
-            </div>
-            <div>
-              <label for="search-by-autor">Por autor</label>
-              <input
-                type="text"
-                id="search-by-autor"
-                name="search-by-autor"
-                placeholder="Buscar autor..."
-              />
-              <small id="description-autor">
-                <span id="num-autores">0</span> autores disponibles
-              </small>
-            </div>
-          </div>
-        </form>
-      </details>
-
-      <!-- Índice alfabético -->
-      <nav id="alphabet-index" class="alphabet-index">
-        <a href="#" class="letter-link" data-letter="0">0</a>
-        <a href="#" class="letter-link" data-letter="1">1</a>
-        <a href="#" class="letter-link" data-letter="2">2</a>
-        <a href="#" class="letter-link" data-letter="3">3</a>
-        <a href="#" class="letter-link" data-letter="4">4</a>
-        <a href="#" class="letter-link" data-letter="5">5</a>
-        <a href="#" class="letter-link" data-letter="6">6</a>
-        <a href="#" class="letter-link" data-letter="7">7</a>
-        <a href="#" class="letter-link" data-letter="8">8</a>
-        <a href="#" class="letter-link" data-letter="9">9</a>
-        <a href="#" class="letter-link" data-letter="A">A</a>
-        <a href="#" class="letter-link" data-letter="B">B</a>
-        <a href="#" class="letter-link" data-letter="C">C</a>
-        <a href="#" class="letter-link" data-letter="D">D</a>
-        <a href="#" class="letter-link" data-letter="E">E</a>
-        <a href="#" class="letter-link" data-letter="F">F</a>
-        <a href="#" class="letter-link" data-letter="G">G</a>
-        <a href="#" class="letter-link" data-letter="H">H</a>
-        <a href="#" class="letter-link" data-letter="I">I</a>
-        <a href="#" class="letter-link" data-letter="J">J</a>
-        <a href="#" class="letter-link" data-letter="K">K</a>
-        <a href="#" class="letter-link" data-letter="L">L</a>
-        <a href="#" class="letter-link" data-letter="M">M</a>
-        <a href="#" class="letter-link" data-letter="N">N</a>
-        <a href="#" class="letter-link" data-letter="Ñ">Ñ</a>
-        <a href="#" class="letter-link" data-letter="O">O</a>
-        <a href="#" class="letter-link" data-letter="P">P</a>
-        <a href="#" class="letter-link" data-letter="Q">Q</a>
-        <a href="#" class="letter-link" data-letter="R">R</a>
-        <a href="#" class="letter-link" data-letter="S">S</a>
-        <a href="#" class="letter-link" data-letter="T">T</a>
-        <a href="#" class="letter-link" data-letter="U">U</a>
-        <a href="#" class="letter-link" data-letter="V">V</a>
-        <a href="#" class="letter-link" data-letter="W">W</a>
-        <a href="#" class="letter-link" data-letter="X">X</a>
-        <a href="#" class="letter-link" data-letter="Y">Y</a>
-        <a href="#" class="letter-link" data-letter="Z">Z</a>
-      </nav>
-
-      <!-- Historial de lectura -->
-      <section id="reading-history" class="reading-history">
-        <details class="history-container">
-          <summary>📚 Libros en curso (<span id="history-count">0</span>)</summary>
-          <div id="history-list" class="history-list">
-            <!-- Los libros en curso se mostrarán aquí -->
-          </div>
-        </details>
-      </section>
-
-      <!-- Información de filtro actual -->
-      <div id="current-filter" class="current-filter hidden">
-        Mostrando: <span id="filter-text"></span>
       </div>
-      
-      <div id="area">
-        <div id="num-results"></div>
-        <ul id="books" class="books"></ul>
-      </div>
-      
-      <div id="book-tab-container" class="book-tab-container">
-        <div id="book-tab" class="book-tab hidden"></div>
-      </div>
-    </main>
-    
-    <!-- Footer -->
-    <footer class="app-footer">
-      <div class="footer-content">
-        <p>&copy; <span id="current-year"></span> LecturAPP - Biblioteca digital de libros EPUB</p>
-        <p class="footer-info">Creado con ❤️ para los amantes de la lectura</p>
-      </div>
-    </footer>
-    
-    <button id="closeBtn" class="closeBtn">X</button>
-    <div id="libro" class="hidden"></div>
-    <div id="overlay">
-      <div class="loader"></div>
     </div>
-    
-    <!-- Modal para información del libro -->
-    <div id="book-info-modal" class="modal hidden">
-      <div class="modal-content">
-        <span class="modal-close">&times;</span>
-        <h2 id="modal-title"></h2>
-        <div class="modal-body">
-          <p><strong>Autor(es):</strong> <span id="modal-authors"></span></p>
-          <p><strong>Año:</strong> <span id="modal-year"></span></p>
-          <p><strong>Páginas:</strong> <span id="modal-pages"></span></p>
-          <p><strong>Categorías:</strong> <span id="modal-categories"></span></p>
-          <p><strong>Idioma:</strong> <span id="modal-language"></span></p>
-          <p><strong>Calificación:</strong> <span id="modal-rating"></span></p>
-          <div class="modal-description">
-            <h3>Descripción:</h3>
-            <p id="modal-description-text"></p>
-          </div>
-          <div class="modal-links">
-            <a id="modal-info-link" href="#" target="_blank" class="hidden">Ver en Google Books</a>
-          </div>
-        </div>
-      </div>
+
+    <!-- Overlay de carga -->
+    <div id="overlay" class="overlay hidden">
+      <div class="loader"></div>
+      <p>Cargando...</p>
     </div>
   </div>
-  
-  <!-- JSZip para manejar archivos EPUB -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" is:inline></script>
-  
+
+  <!-- Estilos para logos clicables -->
+  <style>
+    .clickable-logo {
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+    
+    .clickable-logo:hover {
+      opacity: 0.8;
+    }
+  </style>
+
   <!-- JavaScript principal de la aplicación -->
   <script type="module" src="/js/app.js" is:inline></script>
 </Layout>

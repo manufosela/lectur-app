@@ -1,0 +1,52 @@
+{
+  "AVENGERS": {
+    "Secret Empire": {},
+    "Sin Colección": {},
+    "Ultimates": {}
+  },
+  "GREEN_LANTERN": {
+    "Blackest Night": {},
+    "Green Lantern": {},
+    "Green Lantern Corps": {}
+  },
+  "MIX": {
+    "100 Balas": {},
+    "Conan": {},
+    "Crisis Events": {},
+    "Sandman": {},
+    "Sin Colección": {},
+    "Asterix": {},
+    "Blacksad": {}
+  },
+  "OTROS_HEROES": {
+    "Captain America": {},
+    "Flash": {},
+    "Deadpool": {},
+    "Thor": {},
+    "Daredevil": {},
+    "Wolverine": {},
+    "Iron Man": {},
+    "Wonder Woman": {}
+  },
+  "SUPERMAN": {
+    "Action Comics": {},
+    "Adventures of Superman": {},
+    "Man of Steel": {},
+    "Superman (Volumen Principal)": {}
+  },
+  "BATMAN": {
+    "Batman (Principal)": {},
+    "Detective Comics": {}
+  },
+  "FANTASTIC_FOUR": {
+    "Ultimate Fantastic Four": {},
+    "Sin Colección": {}
+  },
+  "X-MEN": {
+    "New Mutants": {},
+    "Uncanny X-Men": {}
+  },
+  "SPIDERMAN": {
+    "Sin Colección": {}
+  }
+}

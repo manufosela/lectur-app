@@ -1,19 +1,55 @@
 {
   "rules": {
     "libros": {
-      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com')",
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
       ".write": false
     },
     "autores": {
-      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com')",
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
       ".write": false
     },
     "librosPorAutor": {
-      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com')",
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
       ".write": false
     },
     "usuariosAutorizados": {
-      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com')",
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "comics": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "comics_cbz": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "comicsStructure": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "comicsMetadata": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "comicsByFolder": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "comicsStructure_cbz": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "comicsMetadata_cbz": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "comicsByFolder_cbz": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
+      ".write": false
+    },
+    "audiolibros": {
+      ".read": "auth != null && (auth.token.email == 'mjfosela@gmail.com' || auth.token.email == 'amorcd@gmail.com' || auth.token.email == 'pablo.fosela@gmail.com')",
       ".write": false
     },
     "historialLectura": {
@@ -24,6 +60,38 @@
       "amorcd@gmail|com": {
         ".read": "auth != null && auth.token.email == 'amorcd@gmail.com'",
         ".write": "auth != null && auth.token.email == 'amorcd@gmail.com'"
+      },
+      "pablo|fosela@gmail|com": {
+        ".read": "auth != null && auth.token.email == 'pablo.fosela@gmail.com'",
+        ".write": "auth != null && auth.token.email == 'pablo.fosela@gmail.com'"
+      }
+    },
+    "historialAudiolibros": {
+      "mjfosela@gmail|com": {
+        ".read": "auth != null && auth.token.email == 'mjfosela@gmail.com'",
+        ".write": "auth != null && auth.token.email == 'mjfosela@gmail.com'"
+      },
+      "amorcd@gmail|com": {
+        ".read": "auth != null && auth.token.email == 'amorcd@gmail.com'",
+        ".write": "auth != null && auth.token.email == 'amorcd@gmail.com'"
+      },
+      "pablo|fosela@gmail|com": {
+        ".read": "auth != null && auth.token.email == 'pablo.fosela@gmail.com'",
+        ".write": "auth != null && auth.token.email == 'pablo.fosela@gmail.com'"
+      }
+    },
+    "historialComics": {
+      "mjfosela@gmail|com": {
+        ".read": "auth != null && auth.token.email == 'mjfosela@gmail.com'",
+        ".write": "auth != null && auth.token.email == 'mjfosela@gmail.com'"
+      },
+      "amorcd@gmail|com": {
+        ".read": "auth != null && auth.token.email == 'amorcd@gmail.com'",
+        ".write": "auth != null && auth.token.email == 'amorcd@gmail.com'"
+      },
+      "pablo|fosela@gmail|com": {
+        ".read": "auth != null && auth.token.email == 'pablo.fosela@gmail.com'",
+        ".write": "auth != null && auth.token.email == 'pablo.fosela@gmail.com'"
       }
     }
   }

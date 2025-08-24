@@ -14,7 +14,15 @@
     "migrate-status": "node migrate-firebase-to-s3-batch.js --status",
     "migrate-reset": "node migrate-firebase-to-s3-batch.js --reset",
     "sync-nas": "node sync-new-books.js",
-    "sync-nas-auto": "node sync-new-books.js --auto"
+    "sync-nas-auto": "node sync-new-books.js --auto",
+    "upload-missing": "node upload-missing-nas-books.js",
+    "upload-missing-auto": "node upload-missing-nas-books.js --auto",
+    "add-audiobooks": "node firebase-scripts/add-audiobooks-to-firebase.js",
+    "add-all-audiobooks": "node firebase-scripts/add-all-audiobooks-to-firebase.js",
+    "check-audiobooks": "node firebase-scripts/check-audiobooks.js",
+    "add-comics": "node add-comics.js",
+    "add-comics-auto": "node add-comics.js --auto",
+    "check-comics": "node add-comics.js --dry-run"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0",

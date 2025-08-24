@@ -10,10 +10,14 @@
     "generate:firebase-config": "node scripts/generate-firebase-config.js",
     "deploy": "npm run build && firebase deploy",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
-    "serve": "firebase serve"
+    "serve": "firebase serve",
+    "convert:cbr": "node scripts/convert-cbr-to-cbz.js",
+    "generate:comics-json": "node scripts/generate-comics-json.js"
   },
   "dependencies": {
     "astro": "^5.13.0",
-    "dotenv": "^17.2.1"
+    "dotenv": "^17.2.1",
+    "firebase": "^12.1.0",
+    "node-fetch": "^3.3.2"
   }
 }

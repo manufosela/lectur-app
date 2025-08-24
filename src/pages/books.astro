@@ -1,0 +1,835 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AppFooter from '../components/AppFooter.astro';
+---
+
+<Layout title="LecturAPP - Libros">
+  <div class="books-container">
+    
+    <!-- Header de libros -->
+    <header class="books-header">
+      <button id="back-to-menu" class="back-to-menu" title="Volver al menú">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <img class="logo clickable-logo" src="/images/logo64x64.png" alt="LecturAPP" title="Volver al inicio" />
+      <h1 class="title">Libros <span class="books-count">(<span id="header-num-libros">0</span> disponibles)</span></h1>
+      <div class="header-actions">
+        <span id="user-email" class="user-email"></span>
+        <button id="theme-toggle" class="theme-toggle" title="Cambiar tema">
+          <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+          </svg>
+        </button>
+        <button id="logout-btn" class="logout-btn" title="Cerrar sesión">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16,17 21,12 16,7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+    
+    <!-- Buscador compacto -->
+    <details class="search-container">
+      <summary>🔍 Búsqueda avanzada</summary>
+      <form id="search" class="search-form">
+        <div class="grid">
+          <div>
+            <label for="search-by-title">Por título</label>
+            <input
+              type="text"
+              id="search-by-title"
+              name="search-by-title"
+              placeholder="Buscar título..."
+            />
+            <small id="description-titulo">
+              <span id="num-libros">0</span> libros disponibles
+            </small>
+          </div>
+          <div>
+            <label for="search-by-autor">Por autor</label>
+            <input
+              type="text"
+              id="search-by-autor"
+              name="search-by-autor"
+              placeholder="Buscar autor..."
+            />
+            <small id="description-autor">
+              <span id="num-autores">0</span> autores disponibles
+            </small>
+          </div>
+        </div>
+        <input type="submit" value="🔍 Buscar" />
+      </form>
+    </details>
+
+    <!-- Índice alfabético -->
+    <nav id="alphabet-index" class="alphabet-index">
+      <a href="#" class="letter-link" data-letter="0">0</a>
+      <a href="#" class="letter-link" data-letter="1">1</a>
+      <a href="#" class="letter-link" data-letter="2">2</a>
+      <a href="#" class="letter-link" data-letter="3">3</a>
+      <a href="#" class="letter-link" data-letter="4">4</a>
+      <a href="#" class="letter-link" data-letter="5">5</a>
+      <a href="#" class="letter-link" data-letter="6">6</a>
+      <a href="#" class="letter-link" data-letter="7">7</a>
+      <a href="#" class="letter-link" data-letter="8">8</a>
+      <a href="#" class="letter-link" data-letter="9">9</a>
+      <a href="#" class="letter-link" data-letter="A">A</a>
+      <a href="#" class="letter-link" data-letter="B">B</a>
+      <a href="#" class="letter-link" data-letter="C">C</a>
+      <a href="#" class="letter-link" data-letter="D">D</a>
+      <a href="#" class="letter-link" data-letter="E">E</a>
+      <a href="#" class="letter-link" data-letter="F">F</a>
+      <a href="#" class="letter-link" data-letter="G">G</a>
+      <a href="#" class="letter-link" data-letter="H">H</a>
+      <a href="#" class="letter-link" data-letter="I">I</a>
+      <a href="#" class="letter-link" data-letter="J">J</a>
+      <a href="#" class="letter-link" data-letter="K">K</a>
+      <a href="#" class="letter-link" data-letter="L">L</a>
+      <a href="#" class="letter-link" data-letter="M">M</a>
+      <a href="#" class="letter-link" data-letter="N">N</a>
+      <a href="#" class="letter-link" data-letter="Ñ">Ñ</a>
+      <a href="#" class="letter-link" data-letter="O">O</a>
+      <a href="#" class="letter-link" data-letter="P">P</a>
+      <a href="#" class="letter-link" data-letter="Q">Q</a>
+      <a href="#" class="letter-link" data-letter="R">R</a>
+      <a href="#" class="letter-link" data-letter="S">S</a>
+      <a href="#" class="letter-link" data-letter="T">T</a>
+      <a href="#" class="letter-link" data-letter="U">U</a>
+      <a href="#" class="letter-link" data-letter="V">V</a>
+      <a href="#" class="letter-link" data-letter="W">W</a>
+      <a href="#" class="letter-link" data-letter="X">X</a>
+      <a href="#" class="letter-link" data-letter="Y">Y</a>
+      <a href="#" class="letter-link" data-letter="Z">Z</a>
+    </nav>
+
+    <!-- Historial de lectura (se muestra solo si hay elementos) -->
+    <section id="reading-history" class="reading-history" style="display: none;">
+      <details class="history-container">
+        <summary>📚 Continuar leyendo (<span id="history-count">0</span>)</summary>
+        <div id="history-list" class="history-list">
+          <!-- Los elementos del historial se mostrarán aquí -->
+        </div>
+      </details>
+    </section>
+
+    <!-- Contenedor de resultados -->
+    <div class="books-results">
+      <div id="num-results" class="results-count"></div>
+      <div id="books" class="books-table-container">
+        <!-- Los libros se cargarán dinámicamente aquí como tabla -->
+      </div>
+    </div>
+
+    <AppFooter content="Biblioteca digital de libros EPUB" />
+
+    <!-- Modal de información del libro -->
+    <div id="book-info-modal" class="modal hidden">
+      <div class="modal-content">
+        <span id="close-modal" class="close">&times;</span>
+        <div class="modal-body">
+          <div class="modal-cover">
+            <img id="modal-cover" src="" alt="Portada del libro" />
+          </div>
+          <div class="modal-info">
+            <h2 id="modal-title">Título del libro</h2>
+            <p><strong>Autor:</strong> <span id="modal-author"></span></p>
+            <p><strong>Fecha de publicación:</strong> <span id="modal-published"></span></p>
+            <p><strong>Editorial:</strong> <span id="modal-publisher"></span></p>
+            <p><strong>Páginas:</strong> <span id="modal-pages"></span></p>
+            <p><strong>Idioma:</strong> <span id="modal-language"></span></p>
+            <p><strong>Calificación:</strong> <span id="modal-rating"></span></p>
+            <div class="modal-description">
+              <h3>Descripción:</h3>
+              <p id="modal-description-text"></p>
+            </div>
+            <div class="modal-links">
+              <a id="modal-info-link" href="#" target="_blank" class="hidden">Ver en Google Books</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal del lector EPUB -->
+    <div id="epub-reader-modal" class="modal reader-modal hidden">
+      <div class="reader-modal-content">
+        <div class="reader-header">
+          <span id="reader-title">Título del libro</span>
+          <button id="close-reader" class="close" title="Cerrar lector">&times;</button>
+        </div>
+        <div id="epub-viewer" class="epub-viewer">
+          <div id="epub-loading" class="epub-loading">
+            <div class="loader"></div>
+            <p>Cargando libro...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay de carga -->
+    <div id="overlay" class="overlay hidden">
+      <div class="loader"></div>
+      <p>Cargando libros...</p>
+    </div>
+  </div>
+
+  <!-- Estilos específicos para libros -->
+  <style>
+    .books-container {
+      min-height: 100vh;
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .books-header {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      padding: 1rem;
+      background: var(--bg-header);
+      color: var(--text-header);
+      gap: 1rem;
+    }
+
+    .back-to-menu {
+      width: 4rem;
+      height: 4rem;
+      background: dodgerblue;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .books-count {
+      font-size: 0.9rem;
+      font-weight: normal;
+      opacity: 0.8;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-left: auto;
+    }
+
+    .search-container {
+      margin: 0.5rem;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 0.25rem;
+    }
+
+    .search-container summary {
+      cursor: pointer;
+      padding: 0.25rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .search-form {
+      padding: 0.5rem 0.25rem;
+    }
+
+    .alphabet-index {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 0.4rem;
+      margin: 0.5rem 0;
+      border-radius: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.15rem;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid rgba(25, 118, 210, 0.1);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .letter-link {
+      display: inline-block;
+      padding: 0.25rem 0.4rem;
+      margin: 0.05rem;
+      color: var(--primary);
+      text-decoration: none;
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      background: linear-gradient(135deg, white 0%, #f8f9fa 100%);
+      font-weight: bold;
+      font-size: 0.75rem;
+      transition: all 0.2s ease;
+      min-width: 1.5rem;
+      text-align: center;
+      line-height: 1;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .letter-link:hover {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+
+    .letter-link.active {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .reading-history {
+      margin: 1rem;
+      background: var(--bg-history, #f0f8ff);
+      border: 1px solid var(--border-history, #b3d9ff);
+      border-radius: 8px;
+    }
+
+    .history-container {
+      padding: 1rem;
+    }
+
+    .history-container summary {
+      cursor: pointer;
+      padding: 0.5rem;
+      font-weight: bold;
+      color: var(--text-primary);
+    }
+
+    .history-list {
+      margin-top: 1rem;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: var(--bg-card);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .continue-btn, .remove-btn {
+      background: var(--primary);
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .continue-btn {
+      background: var(--primary);
+      color: white;
+    }
+
+    .continue-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .remove-btn {
+      background: #dc3545;
+      color: white;
+    }
+
+    .remove-btn:hover {
+      background: #c82333;
+      transform: translateY(-1px);
+    }
+
+    .books-results {
+      padding: 1rem;
+      flex: 1;
+    }
+
+    .results-count {
+      margin-bottom: 1rem;
+      font-weight: bold;
+      color: var(--text-primary);
+    }
+
+    .books-table-container {
+      overflow: auto;
+      border-radius: 8px;
+      max-height: 55vh;
+      position: relative;
+    }
+
+    .books-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-background-color);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .books-table th {
+      background: var(--table-border-color);
+      color: var(--color);
+      padding: 0.25rem 0.5rem;
+      text-align: left;
+      font-weight: bold;
+      border-bottom: 1px solid var(--table-border-color);
+      font-size: 0.75rem;
+      line-height: 1;
+      height: 1rem;
+    }
+
+    .books-table td {
+      padding: 0.25rem 0.5rem;
+      border-bottom: 1px solid var(--table-border-color);
+      vertical-align: middle;
+      line-height: 1;
+      font-size: 0.75rem;
+      height: 1.8rem;
+    }
+    
+    .books-table tr {
+      height: 1.8rem;
+    }
+
+    .book-row:hover {
+      background: var(--table-row-stripped-background-color);
+    }
+
+    .book-title {
+      font-weight: 500;
+      color: var(--color);
+      max-width: 300px;
+      word-wrap: break-word;
+    }
+
+    .clickable-title {
+      cursor: pointer;
+      color: var(--primary);
+      transition: color 0.2s ease;
+    }
+
+    .clickable-title:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    .book-author {
+      color: var(--muted-color);
+      font-style: italic;
+    }
+
+    .book-format {
+      text-align: center;
+    }
+
+    .format-badge {
+      display: inline-block;
+      padding: 0.1rem 0.2rem;
+      border-radius: 4px;
+      font-size: 0.55rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      line-height: 1;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .format-epub {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      color: #1976d2;
+    }
+
+    .format-pdf {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      color: #f57c00;
+    }
+
+    .book-action {
+      white-space: nowrap;
+      text-align: center;
+      width: 90px;
+      padding: 0.15rem 0.1rem;
+      height: 1.8rem;
+    }
+
+
+    .book-action button {
+      width: 100%;
+      height: 1.5rem;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      line-height: 1;
+      transition: all 0.2s ease;
+      gap: 0.2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      font-weight: 500;
+      min-width: 80px;
+    }
+
+    .read-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, #1565c0 100%);
+      color: white;
+    }
+
+    .read-btn:hover {
+      background: linear-gradient(135deg, var(--primary-hover) 0%, #0d47a1 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .info-btn {
+      background: linear-gradient(135deg, var(--secondary) 0%, #616161 100%);
+      color: white;
+    }
+
+    .info-btn:hover {
+      background: linear-gradient(135deg, var(--secondary-hover) 0%, #424242 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .initial-message {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: var(--bg-card);
+      border-radius: 8px;
+      margin: 2rem auto;
+      max-width: 600px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .initial-message h3 {
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+
+    .initial-message p {
+      color: var(--text-muted);
+      margin: 0.5rem 0;
+      font-size: 1rem;
+    }
+
+    .initial-message .book-count {
+      font-weight: bold;
+      color: var(--text-link);
+      font-size: 1.1rem;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border-radius: 8px;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    .modal-cover img {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    /* Reader Modal */
+    .reader-modal {
+      z-index: 2000;
+    }
+
+    .reader-modal-content {
+      background: var(--bg-card);
+      border-radius: 8px;
+      width: 95vw;
+      height: 95vh;
+      max-width: none;
+      max-height: none;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .reader-header {
+      background: var(--bg-header);
+      color: var(--text-header);
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--table-border-color);
+    }
+
+    .reader-header #close-reader {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.5rem;
+      transition: background 0.2s;
+      position: static;
+    }
+
+    .reader-header #close-reader:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .epub-viewer {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: white;
+    }
+
+    .epub-loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    /* EPUB Reader Styles */
+    .epub-reader {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .epub-header {
+      background: var(--bg-secondary);
+      padding: 1rem;
+      border-bottom: 1px solid var(--table-border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .epub-info h3 {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+    }
+
+    .epub-info p {
+      margin: 0.25rem 0 0 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .epub-navigation {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .epub-nav-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .epub-nav-btn:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .epub-nav-btn:disabled {
+      background: var(--muted-color);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    #epub-page-info {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .epub-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      background: white;
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+
+    .epub-content h1, .epub-content h2, .epub-content h3 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+
+    .epub-content p {
+      margin-bottom: 1rem;
+      text-align: justify;
+    }
+
+    .epub-content img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1rem auto;
+    }
+
+    /* Responsive EPUB reader */
+    @media (max-width: 768px) {
+      .epub-header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .epub-content {
+        padding: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .epub-nav-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Overlay */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      color: white;
+    }
+
+    .loader {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+    
+    
+    /* Logos clicables */
+    .clickable-logo {
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+    
+    .clickable-logo:hover {
+      opacity: 0.8;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .books-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 0.5rem;
+      }
+      
+      .books-table th:nth-child(2),
+      .books-table td:nth-child(2) {
+        display: none; /* Hide author column on mobile */
+      }
+      
+      .book-action {
+        width: 70px;
+        padding: 0.15rem !important;
+      }
+      
+      .book-action button {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.65rem;
+        height: 1.2rem;
+      }
+      
+      .modal-body {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+    }
+  </style>
+
+  <!-- Firebase scripts ya están cargados en Layout.astro -->
+  
+  <!-- JSZip para manejar archivos EPUB -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" is:inline></script>
+  
+  <!-- JavaScript principal de la aplicación -->
+  <script type="module" src="/js/books.js"></script>
+</Layout>

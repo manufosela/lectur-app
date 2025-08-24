@@ -1,6 +1,6 @@
 /**
- * Lector de cómics CBZ/CBR para LecturAPP
- * Soporta archivos CBZ (ZIP) y CBR (RAR)
+ * Lector de cómics CBZ para LecturAPP
+ * Optimizado para archivos CBZ (ZIP) - mejor rendimiento y compatibilidad
  */
 
 import { 
@@ -12,6 +12,9 @@ import {
   saveComicProgressToFirebase, 
   getComicHistoryFromFirebase 
 } from './firebase-config.js';
+
+import { themeService } from './modules/theme.js';
+import { uiService } from './modules/ui.js';
 
 // Variables globales
 let currentComic = null;
@@ -41,6 +44,13 @@ auth.onAuthStateChanged((user) => {
 async function loadComics() {
   try {
     showLoader(true);
+    
+    // Initialize theme service
+    themeService.init();
+    
+    // Setup UI components
+    uiService.setupClickableLogos();
+    uiService.setupBackButton('back-to-menu');
     
     // Obtener lista completa y estructura de cómics
     comicsList = await getComicsList().catch(() => []);
@@ -102,18 +112,25 @@ function displayFolderView(structure, currentFolderName = null) {
   
   // Mostrar cómics del nivel actual
   if (structure && structure.comics && structure.comics.length > 0) {
-    structure.comics.forEach(comic => {
+    structure.comics.forEach(comicFilename => {
+      // Los cómics son strings (nombres de archivo), no objetos
+      const title = extractTitle(comicFilename);
+      // Construir la ruta completa con las carpetas actuales
+      const fullPath = currentPath.length > 0 
+        ? `${currentPath.join('/')}/${comicFilename}`
+        : comicFilename;
+      
       html += `
-        <div class="comic-card" data-path="${comic.path}">
+        <div class="comic-card" data-path="${fullPath}">
           <img 
             class="comic-cover" 
             src="/images/comic-placeholder.svg" 
-            alt="${comic.title}"
+            alt="${title}"
             loading="lazy"
           />
           <div class="comic-info">
-            <div class="comic-title">${comic.title}</div>
-            <div class="comic-series">${comic.series}</div>
+            <div class="comic-title">${title}</div>
+            <div class="comic-series">${currentFolderName || 'Serie desconocida'}</div>
           </div>
         </div>
       `;
@@ -274,26 +291,50 @@ async function openComic(comicPath) {
   try {
     showLoader(true);
     
-    // Obtener el archivo del cómic
-    const comicFile = await fetchComic(comicPath);
+    // Primero obtener los metadatos para tener la URL correcta
+    const metadata = await getComicMetadata(comicPath).catch(() => null);
+    let realPath = comicPath;
+    
+    if (metadata && metadata.originalFilename) {
+      // Si tenemos metadatos, usar el path original real
+      realPath = metadata.path || metadata.originalFilename || comicPath;
+    }
+    
+    // Obtener el archivo del cómic con la ruta correcta
+    const comicFile = await fetchComic(realPath);
     
     // Extraer páginas según el formato
+    // Ahora solo procesamos CBZ (archivos ZIP)
     if (comicPath.toLowerCase().endsWith('.cbz')) {
       await extractCBZ(comicFile);
-    } else if (comicPath.toLowerCase().endsWith('.cbr')) {
-      await extractCBR(comicFile);
     } else {
-      throw new Error('Formato no soportado');
+      throw new Error('Solo se soportan archivos CBZ');
     }
     
     // Mostrar el visor
     showViewer(true);
     
-    // Cargar primera página
-    loadPage(0);
+    // Cargar historial de lectura si existe
+    let startPage = 0;
+    if (currentUser) {
+      try {
+        const historyArray = await getComicHistoryFromFirebase(currentUser.email);
+        const comicId = btoa(comicPath); // Mismo ID que usa saveComicProgressToFirebase
+        const savedComic = historyArray.find(item => item.id === comicId);
+        if (savedComic && savedComic.currentPage > 0) {
+          startPage = savedComic.currentPage;
+          console.log(`📖 Retomando lectura desde página ${startPage + 1}`);
+        }
+      } catch (error) {
+        console.warn('Error cargando historial:', error);
+      }
+    }
     
-    // Guardar progreso
-    saveProgress();
+    // Cargar la página guardada o la primera
+    loadPage(startPage);
+    
+    // Guardar el cómic actual para el tracking de progreso
+    currentComic = comicPath;
     
     showLoader(false);
   } catch (error) {
@@ -304,18 +345,36 @@ async function openComic(comicPath) {
 }
 
 /**
- * Obtener archivo del cómic desde Nginx (con proxy en desarrollo)
+ * Obtener URL del cómic (copiado exactamente de audiolibros)
+ */
+async function getComicUrl(comicPath) {
+  // Usar SOLO Nginx - sin fallback a Firebase Storage
+  console.log('📚 Obteniendo cómic desde Nginx (sin fallback):', comicPath);
+  
+  // Revertir los cambios de nombres de Firebase a nombres reales
+  // Firebase usa: FANTASTIC_FOUR/Ultimate_Fantastic_Four
+  // Real usa: FANTASTIC FOUR/Ultimate Fantastic Four
+  const realPath = comicPath
+    .replace(/_/g, ' ')  // Convertir _ de vuelta a espacios
+    .replace(/\|/g, '/'); // Convertir | de vuelta a /
+  
+  console.log('📚 Ruta real del archivo:', realPath);
+  
+  // Construir URL de Nginx (carpeta COMICS en mayúsculas)
+  // NO usar encodeURIComponent en toda la ruta, solo en el nombre del archivo
+  const pathParts = realPath.split('/');
+  const encodedParts = pathParts.map(part => encodeURIComponent(part));
+  const nginxUrl = `https://storage.lecturapp.es/COMICS/${encodedParts.join('/')}`;
+  
+  // Solo Nginx, sin verificación ni fallback
+  return nginxUrl;
+}
+
+/**
+ * Obtener archivo del cómic
  */
 async function fetchComic(comicPath) {
-  console.log('📚 Obteniendo cómic:', comicPath);
-  
-  // En desarrollo usa proxy, en producción usa URL directa
-  const isDevelopment = window.location.hostname === 'localhost';
-  const baseUrl = isDevelopment 
-    ? '/storage/COMICS' 
-    : 'https://storage.lecturapp.es/COMICS';
-  
-  const comicUrl = `${baseUrl}/${encodeURIComponent(comicPath)}`;
+  const comicUrl = await getComicUrl(comicPath);
   console.log('📚 URL del cómic:', comicUrl);
   
   const response = await fetch(comicUrl);
@@ -360,19 +419,23 @@ async function extractCBZ(blob) {
 }
 
 /**
- * Extraer páginas de un archivo CBR (RAR)
- * Nota: Necesitaremos una librería adicional para RAR
+ * NOTA: Funciones CBR eliminadas
+ * 
+ * La aplicación ahora solo soporta archivos CBZ (ZIP) para mejor rendimiento
+ * y compatibilidad. Los archivos CBR han sido convertidos a CBZ.
+ * 
+ * Funciones eliminadas:
+ * - extractCBR()
+ * - extractCBRFallback() 
+ * - Módulo cbr-extractor.js
+ * - Cloud Function extractCBR
+ * 
+ * Beneficios de CBZ-only:
+ * ✅ Mejor rendimiento (JSZip nativo)
+ * ✅ Sin dependencias WASM/Cloud Functions
+ * ✅ 100% compatible con navegadores
+ * ✅ Experiencia de usuario más fluida
  */
-async function extractCBR(blob) {
-  // Para CBR necesitamos una librería como unrar.js
-  // Por ahora mostraremos un mensaje
-  throw new Error('Soporte para CBR próximamente. Por favor, convierte el archivo a CBZ.');
-  
-  // TODO: Implementar cuando tengamos la librería RAR
-  // const unrar = new Unrar(blob);
-  // const files = unrar.getEntries();
-  // etc...
-}
 
 /**
  * Cargar página específica
@@ -393,6 +456,9 @@ function loadPage(index) {
   if (pageInfo) {
     pageInfo.textContent = `Página ${index + 1} de ${currentPages.length}`;
   }
+  
+  // Guardar progreso de lectura
+  saveProgress();
   
   // Actualizar botones de navegación
   updateNavButtons();
@@ -594,6 +660,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('search-comics')?.addEventListener('input', (e) => {
     searchComics(e.target.value);
   });
+  
+  // Theme toggle
+  themeService.setupThemeToggle('theme-toggle');
   
   // Event listener para logo clicable - volver al inicio
   const clickableLogo = document.querySelector('.clickable-logo');
