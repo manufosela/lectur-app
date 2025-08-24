@@ -112,13 +112,26 @@ function displayFolderView(structure, currentFolderName = null) {
   
   // Mostrar cómics del nivel actual
   if (structure && structure.comics && structure.comics.length > 0) {
-    structure.comics.forEach(comicFilename => {
-      // Los cómics son strings (nombres de archivo), no objetos
+    structure.comics.forEach(comicData => {
+      // Manejar tanto objetos (datos antiguos) como strings (datos nuevos)
+      let comicFilename, fullPath;
+      
+      if (typeof comicData === 'string') {
+        // Datos nuevos: strings simples
+        comicFilename = comicData;
+        fullPath = currentPath.length > 0 
+          ? `${currentPath.join('/')}/${comicFilename}`
+          : comicFilename;
+      } else if (typeof comicData === 'object' && comicData.filename) {
+        // Datos antiguos: objetos con propiedades
+        comicFilename = comicData.filename;
+        fullPath = comicData.path || comicFilename;
+      } else {
+        console.error('Formato de cómic desconocido:', comicData);
+        return;
+      }
+      
       const title = extractTitle(comicFilename);
-      // Construir la ruta completa con las carpetas actuales
-      const fullPath = currentPath.length > 0 
-        ? `${currentPath.join('/')}/${comicFilename}`
-        : comicFilename;
       
       html += `
         <div class="comic-card" data-path="${fullPath}">
@@ -278,6 +291,12 @@ function displayComics(comics) {
  * Extraer título del nombre del archivo
  */
 function extractTitle(filename) {
+  // Verificar que filename sea una string
+  if (typeof filename !== 'string') {
+    console.error('extractTitle: filename no es string:', filename);
+    return 'Título desconocido';
+  }
+  
   return filename
     .replace(/\.(cbz|cbr|cb7|cbt)$/i, '')
     .replace(/[_-]/g, ' ')
@@ -351,22 +370,17 @@ async function getComicUrl(comicPath) {
   // Usar SOLO Nginx - sin fallback a Firebase Storage
   console.log('📚 Obteniendo cómic desde Nginx (sin fallback):', comicPath);
   
-  // Revertir los cambios de nombres de Firebase a nombres reales
-  // Firebase usa: FANTASTIC_FOUR/Ultimate_Fantastic_Four
-  // Real usa: FANTASTIC FOUR/Ultimate Fantastic Four
-  const realPath = comicPath
-    .replace(/_/g, ' ')  // Convertir _ de vuelta a espacios
-    .replace(/\|/g, '/'); // Convertir | de vuelta a /
+  // Convertir solo subcarpetas, mantener carpeta principal con underscore
+  const pathParts = comicPath.replace(/\|/g, '/').split('/');
+  const fixedParts = pathParts.map((part, index) => {
+    if (index === 0) return part; // Mantener primera carpeta (FANTASTIC_FOUR)
+    return part.replace(/_/g, ' '); // Convertir subcarpetas
+  });
+  const cleanPath = fixedParts.join('/');
+  const encodedPath = encodeURIComponent(cleanPath).replace(/%2F/g, '/');
+  const nginxUrl = `https://storage.lecturapp.es/COMICS/${encodedPath}`;
   
-  console.log('📚 Ruta real del archivo:', realPath);
-  
-  // Construir URL de Nginx (carpeta COMICS en mayúsculas)
-  // NO usar encodeURIComponent en toda la ruta, solo en el nombre del archivo
-  const pathParts = realPath.split('/');
-  const encodedParts = pathParts.map(part => encodeURIComponent(part));
-  const nginxUrl = `https://storage.lecturapp.es/COMICS/${encodedParts.join('/')}`;
-  
-  // Solo Nginx, sin verificación ni fallback
+  console.log('📚 URL del cómic:', nginxUrl);
   return nginxUrl;
 }
 
