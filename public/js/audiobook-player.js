@@ -9,6 +9,7 @@ import {
   saveAudiobookProgressToFirebase, 
   getAudiobookHistoryFromFirebase 
 } from './firebase-config.js';
+import { storageService } from './modules/storage.js';
 
 // Variables globales
 let currentAudiobook = null;
@@ -797,14 +798,10 @@ async function openAudiobook(audiobookPath) {
  * Obtener URL del audiolibro
  */
 async function getAudiobookUrl(audiobookPath) {
-  // Usar SOLO Nginx - sin fallback a Firebase Storage
-  console.log('🎵 Obteniendo audiolibro desde Nginx (sin fallback):', audiobookPath);
-  
-  // Construir URL de Nginx (carpeta AUDIOLIBROS en mayúsculas)
-  const nginxUrl = `https://storage.lecturapp.es/AUDIOLIBROS/${encodeURIComponent(audiobookPath)}`;
-  
-  // Solo Nginx, sin verificación ni fallback
-  return nginxUrl;
+  console.log('🎵 Solicitando URL firmada para audiolibro:', audiobookPath);
+
+  const objectPath = `AUDIOLIBROS/${audiobookPath}`;
+  return storageService.getSignedUrl(objectPath, 'audiobook');
 }
 
 /**

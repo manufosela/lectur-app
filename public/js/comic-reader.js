@@ -15,6 +15,7 @@ import {
 
 import { themeService } from './modules/theme.js';
 import { uiService } from './modules/ui.js';
+import { storageService } from './modules/storage.js';
 
 // Variables globales
 let currentComic = null;
@@ -367,9 +368,8 @@ async function openComic(comicPath) {
  * Obtener URL del cómic (copiado exactamente de audiolibros)
  */
 async function getComicUrl(comicPath) {
-  // Usar SOLO Nginx - sin fallback a Firebase Storage
-  console.log('📚 Obteniendo cómic desde Nginx (sin fallback):', comicPath);
-  
+  console.log('📚 Solicitando URL firmada para cómic:', comicPath);
+
   // Convertir solo subcarpetas, mantener carpeta principal con underscore
   const pathParts = comicPath.replace(/\|/g, '/').split('/');
   const fixedParts = pathParts.map((part, index) => {
@@ -377,11 +377,12 @@ async function getComicUrl(comicPath) {
     return part.replace(/_/g, ' '); // Convertir subcarpetas
   });
   const cleanPath = fixedParts.join('/');
-  const encodedPath = encodeURIComponent(cleanPath).replace(/%2F/g, '/');
-  const nginxUrl = `https://storage.lecturapp.es/COMICS/${encodedPath}`;
+
+  const objectPath = `COMICS/${cleanPath}`;
+  const signedUrl = await storageService.getSignedUrl(objectPath, 'comic');
   
-  console.log('📚 URL del cómic:', nginxUrl);
-  return nginxUrl;
+  console.log('📚 URL firmada del cómic:', signedUrl);
+  return signedUrl;
 }
 
 /**

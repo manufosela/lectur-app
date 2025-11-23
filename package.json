@@ -15,7 +15,7 @@
     "generate:comics-json": "node scripts/generate-comics-json.js"
   },
   "dependencies": {
-    "astro": "^5.13.0",
+    "astro": "^5.16.0",
     "dotenv": "^17.2.1",
     "firebase": "^12.1.0",
     "node-fetch": "^3.3.2"

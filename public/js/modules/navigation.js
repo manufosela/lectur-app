@@ -93,19 +93,15 @@ export class NavigationService {
    */
    async loadEpub(contentUrl, viewer, loading, userEmail = null, bookPath = null, startChapter = 1) {
     try {
-      console.log('🔄 Cargando EPUB:', contentUrl);
+      console.log('🔄 Cargando EPUB (URL firmada):', contentUrl);
       
       // Extract book path from URL if not provided
       const extractedPath = contentUrl.split('/').pop();
       const finalBookPath = bookPath || extractedPath;
       console.log('📁 Ruta del libro:', finalBookPath);
-      
-      // Use Cloud Function to download EPUB (handles CORS)
-      const cloudFunctionUrl = `https://europe-west1-lectur-app.cloudfunctions.net/downloadFile?fileName=${encodeURIComponent(finalBookPath)}`;
-      console.log('☁️ Usando Cloud Function:', cloudFunctionUrl);
-      
-      const response = await fetch(cloudFunctionUrl, {
-        method: "GET",
+
+      const response = await fetch(contentUrl, {
+        method: 'GET',
         headers: {
           'Accept': 'application/octet-stream, application/epub+zip, */*'
         }

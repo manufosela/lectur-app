@@ -8,6 +8,7 @@ import { contentService } from './content.js';
 import { uiService } from './ui.js';
 import { authService } from './auth.js';
 import { navigationService } from './navigation.js';
+import { storageService } from './storage.js';
 
 export class BooksService {
   constructor() {
@@ -327,29 +328,34 @@ export class BooksService {
   /**
    * Handle book click events
    */
-  handleBookClick(event) {
-    const readBtn = event.target.closest('.read-btn');
-    const infoBtn = event.target.closest('.info-btn');
-    const titleCell = event.target.closest('.clickable-title');
-    
-    if (readBtn) {
-      const bookPath = readBtn.dataset.book;
-      this.openBook(bookPath);
-    } else if (infoBtn) {
-      const bookPath = infoBtn.dataset.book;
-      this.showBookInfo(bookPath);
-    } else if (titleCell) {
-      const bookPath = titleCell.dataset.book;
-      this.openBook(bookPath);
+  async handleBookClick(event) {
+    try {
+      const readBtn = event.target.closest('.read-btn');
+      const infoBtn = event.target.closest('.info-btn');
+      const titleCell = event.target.closest('.clickable-title');
+      
+      if (readBtn) {
+        const bookPath = readBtn.dataset.book;
+        await this.openBook(bookPath);
+      } else if (infoBtn) {
+        const bookPath = infoBtn.dataset.book;
+        this.showBookInfo(bookPath);
+      } else if (titleCell) {
+        const bookPath = titleCell.dataset.book;
+        await this.openBook(bookPath);
+      }
+    } catch (error) {
+      console.error('❌ Error abriendo libro:', error);
     }
   }
 
   /**
    * Open book for reading
    */
-  openBook(bookPath, startChapter = 1) {
+  async openBook(bookPath, startChapter = 1) {
     try {
-      const bookUrl = contentService.generateContentUrl(bookPath, 'books');
+      const objectPath = `LIBROS/${bookPath}`;
+      const bookUrl = await storageService.getSignedUrl(objectPath, 'book');
       
       // No sobrescribir progreso existente
       // this.saveToHistory(bookPath); // Comentado: el progreso se guarda al navegar
@@ -606,11 +612,11 @@ export class BooksService {
     
     // Setup continue reading buttons
     historyList.querySelectorAll('.continue-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const bookPath = btn.dataset.book;
         const chapter = parseInt(btn.dataset.chapter) || 1;
-        this.openBook(bookPath, chapter);
+        await this.openBook(bookPath, chapter);
       });
     });
 

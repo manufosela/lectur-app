@@ -486,7 +486,7 @@ function extractAudiobookTitle(filename) {
 // Funciones para cómics
 export const getComicsList = () => {
   return new Promise((resolve, reject) => {
-    database.ref('/comics').once('value')
+    database.ref('/comics_cbz').once('value')
       .then((snapshot) => {
         if (snapshot.exists()) {
           const comicsData = snapshot.val();
@@ -507,7 +507,7 @@ export const getComicsList = () => {
 
 export const getComicsStructure = () => {
   return new Promise((resolve, reject) => {
-    database.ref('/comicsStructure').once('value')
+    database.ref('/comicsStructure_cbz').once('value')
       .then((snapshot) => {
         if (snapshot.exists()) {
           resolve(snapshot.val());
@@ -526,7 +526,7 @@ export const getComicsStructure = () => {
 export const getComicsByFolder = (folderKey) => {
   return new Promise((resolve, reject) => {
     const cleanKey = folderKey.replace(/[.#$/\\[\\]]/g, '|').replace(/\\s+/g, '_').replace(/\\|+/g, '|');
-    database.ref(\`/comicsByFolder/\${cleanKey}\`).once('value')
+    database.ref(\`/comicsByFolder_cbz/\${cleanKey}\`).once('value')
       .then((snapshot) => {
         if (snapshot.exists()) {
           resolve(snapshot.val() || []);
@@ -545,7 +545,7 @@ export const getComicsByFolder = (folderKey) => {
 export const getComicMetadata = (comicPath) => {
   return new Promise((resolve, reject) => {
     const cleanKey = comicPath.replace(/[.#$/\\[\\]]/g, '|').replace(/\\s+/g, '_').replace(/\\|+/g, '|');
-    database.ref(\`/comicsMetadata/\${cleanKey}\`).once('value')
+    database.ref(\`/comicsMetadata_cbz/\${cleanKey}\`).once('value')
       .then((snapshot) => {
         if (snapshot.exists()) {
           resolve(snapshot.val());
