@@ -3,7 +3,10 @@
 /**
  * Script para generar un JSON estructurado de todos los cómics
  * con formato CBR y CBZ del directorio /COMICS
- * 
+ *
+ * Genera relpath en lugar de URLs absolutas.
+ * Para URLs absolutas, usar getProtectedUrl(relpath) en runtime.
+ *
  * Uso: node scripts/generate-comics-json.js [output-file.json]
  */
 
@@ -15,9 +18,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 class ComicsJSONGenerator {
-  constructor(comicsDir, baseUrl = 'https://storage.lecturapp.es/COMICS') {
+  constructor(comicsDir) {
     this.comicsDir = comicsDir;
-    this.baseUrl = baseUrl;
     this.comics = [];
     this.stats = {
       totalSeries: 0,
@@ -145,7 +147,7 @@ class ComicsJSONGenerator {
         issueNumber,
         issueTitle,
         file,
-        url: `${this.baseUrl}/${encodeURIComponent(file.relativePath)}`,
+        relpath: `COMICS/${file.relativePath}`,
         format: file.extension.substring(1)
       });
     }
@@ -167,7 +169,7 @@ class ComicsJSONGenerator {
       seriesData.issues.push({
         number: selectedVersion.issueNumber,
         title: selectedVersion.issueTitle,
-        url: selectedVersion.url,
+        relpath: selectedVersion.relpath,
         format: selectedVersion.format,
         filename: selectedVersion.file.name,
         path: selectedVersion.file.relativePath
@@ -205,7 +207,7 @@ class ComicsJSONGenerator {
     return {
       metadata: {
         generatedAt: new Date().toISOString(),
-        baseUrl: this.baseUrl,
+        note: 'Usar getProtectedUrl(relpath) para URLs absolutas',
         stats: this.stats
       },
       comics: this.comics
@@ -297,9 +299,9 @@ Ejemplos:
 
 El JSON generado incluye:
 • Metadata con estadísticas
-• Series ordenadas alfabéticamente  
+• Series ordenadas alfabéticamente
 • Issues ordenados por número
-• URLs completas para cada archivo
+• relpath para cada archivo (usar getProtectedUrl en runtime)
 `);
     process.exit(0);
   }

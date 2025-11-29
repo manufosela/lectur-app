@@ -96,19 +96,19 @@ import Layout from '../layouts/Layout.astro';
             <button class="category-card" data-category="books">
               <div class="category-icon">📚</div>
               <h3>Libros</h3>
-              <p class="category-count"><span id="books-count">0</span> disponibles</p>
+              <p class="category-count"><span id="books-count" class="count-loading"></span> disponibles</p>
             </button>
-            
+
             <button class="category-card" data-category="audiobooks">
               <div class="category-icon">🎧</div>
               <h3>Audiolibros</h3>
-              <p class="category-count"><span id="audiobooks-count">0</span> disponibles</p>
+              <p class="category-count"><span id="audiobooks-count" class="count-loading"></span> disponibles</p>
             </button>
-            
+
             <button class="category-card" data-category="comics">
               <div class="category-icon">💬</div>
               <h3>Cómics</h3>
-              <p class="category-count"><span id="comics-count">0</span> disponibles</p>
+              <p class="category-count"><span id="comics-count" class="count-loading"></span> disponibles</p>
             </button>
           </div>
         </div>
@@ -122,15 +122,39 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- Estilos para logos clicables -->
+  <!-- Estilos para logos clicables y loaders de contadores -->
   <style>
     .clickable-logo {
       cursor: pointer;
       transition: opacity 0.2s ease;
     }
-    
+
     .clickable-logo:hover {
       opacity: 0.8;
+    }
+
+    /* Loader para contadores */
+    .count-loading {
+      display: inline-block;
+      width: 2.5em;
+      height: 1em;
+      background: linear-gradient(90deg, var(--pico-muted-color) 25%, var(--pico-secondary) 50%, var(--pico-muted-color) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      vertical-align: middle;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Cuando el contador tiene valor, quitar la animación */
+    .count-loading:not(:empty) {
+      background: none;
+      animation: none;
+      width: auto;
     }
   </style>
 

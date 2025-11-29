@@ -31,7 +31,14 @@ function generateFirebaseConfig() {
     process.exit(1);
   }
 
-  const configContent = `// Configuración de Firebase (generado automáticamente desde .env)
+  const configContent = `/**
+ * Firebase Configuration - MÓDULO CENTRAL
+ * Generado automáticamente desde .env por scripts/generate-firebase-config.js
+ *
+ * IMPORTANTE: Este es el ÚNICO punto de inicialización de Firebase.
+ * Todos los módulos deben importar 'auth', 'database', etc. desde este archivo.
+ * NO inicializar Firebase en ningún otro lugar.
+ */
 const firebaseConfig = {
   apiKey: "${process.env.PUBLIC_FIREBASE_API_KEY}",
   authDomain: "${process.env.PUBLIC_FIREBASE_AUTH_DOMAIN}",
@@ -551,12 +558,12 @@ export const getComicMetadata = (comicPath) => {
           resolve(snapshot.val());
         } else {
           console.log(\`No hay metadatos para el cómic: \${comicPath}\`);
-          // Crear metadatos básicos desde la ruta
+          // Crear metadatos básicos desde la ruta (sin URL absoluta - usar getProtectedUrl)
           resolve({
             title: extractComicTitle(comicPath),
             series: extractComicSeries(comicPath),
             path: comicPath,
-            url: \`https://storage.lecturapp.es/COMICS/\${comicPath}\`
+            relpath: \`COMICS/\${comicPath}\`
           });
         }
       })

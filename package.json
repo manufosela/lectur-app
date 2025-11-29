@@ -12,7 +12,8 @@
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "serve": "firebase serve",
     "convert:cbr": "node scripts/convert-cbr-to-cbz.js",
-    "generate:comics-json": "node scripts/generate-comics-json.js"
+    "generate:comics-json": "node scripts/generate-comics-json.js",
+    "generate:stats": "node scripts/generate-content-stats.cjs"
   },
   "dependencies": {
     "astro": "^5.16.0",

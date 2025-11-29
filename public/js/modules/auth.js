@@ -17,14 +17,20 @@ export class AuthService {
   init() {
     auth.onAuthStateChanged(async (user) => {
       console.log('Estado de auth cambió:', user ? user.email : 'No autenticado');
-      
+
       if (user) {
-        await this.handleUserLogin(user);
+        try {
+          await this.handleUserLogin(user);
+        } catch (error) {
+          // Si falla la autorización, el usuario queda como null
+          // pero aún así notificamos para que la UI se actualice
+          console.error('Error en handleUserLogin:', error);
+        }
       } else {
         this.handleUserLogout();
       }
-      
-      // Notify all callbacks about auth state change
+
+      // Notify all callbacks about auth state change (always)
       this.notifyAuthStateChange(this.currentUser);
     });
   }
