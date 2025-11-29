@@ -1,32 +1,33 @@
+// TODO: All content fetching must go exclusively through downloadProtectedFile()
 /**
  * Lector de cómics CBZ para LecturAPP
  * Optimizado para archivos CBZ (ZIP) - mejor rendimiento y compatibilidad
+ *
+ * Usa catalog-loader para obtener la estructura real del NAS (_aquitengolalista.json)
+ * Firebase solo se usa para historial de lectura
  */
 
-import { 
-  getComicsList,
-  getComicsStructure,
-  getComicsByFolder,
-  getComicMetadata,
-  auth, 
-  saveComicProgressToFirebase, 
-  getComicHistoryFromFirebase 
+import {
+  auth,
+  saveComicProgressToFirebase,
+  getComicHistoryFromFirebase
 } from './firebase-config.js';
 
 import { themeService } from './modules/theme.js';
 import { uiService } from './modules/ui.js';
-import { storageService } from './modules/storage.js';
+import { contentService } from './modules/content.js';
+import { downloadProtectedFile } from './modules/protected-download.js';
+import { findNodeByRelpath, getFilesByExtension } from './modules/catalog-loader.js';
 
 // Variables globales
 let currentComic = null;
 let currentPages = [];
 let currentPageIndex = 0;
 let currentZoom = 1;
-let comicsList = [];
-let comicsStructure = {};
 let currentFolder = null;
 let currentPath = []; // Para navegación de breadcrumbs
 let currentUser = null;
+let comicsStructure = {}; // Estructura jerárquica construida desde el catálogo
 
 // Detectar usuario actual
 auth.onAuthStateChanged((user) => {
@@ -40,37 +41,77 @@ auth.onAuthStateChanged((user) => {
 });
 
 /**
- * Cargar estructura de cómics desde Firebase
+ * Cargar estructura de cómics desde el catálogo del NAS
  */
 async function loadComics() {
   try {
     showLoader(true);
-    
+
     // Initialize theme service
     themeService.init();
-    
+
     // Setup UI components
     uiService.setupClickableLogos();
     uiService.setupBackButton('back-to-menu');
-    
-    // Obtener lista completa y estructura de cómics
-    comicsList = await getComicsList().catch(() => []);
-    comicsStructure = await getComicsStructure().catch(() => {});
-    
-    // Actualizar contador total
+
+    // Cargar solo el catálogo de cómics (no todos los catálogos)
+    await contentService.loadContentType('comics');
+
+    // Obtener catálogo de cómics
+    const comicsCatalog = contentService.getCatalog('comics');
+    const counts = contentService.getContentCounts();
+
+    // Actualizar contador
     const comicsCount = document.getElementById('header-num-comics');
     if (comicsCount) {
-      comicsCount.textContent = comicsList.length;
+      comicsCount.textContent = counts.comics;
+      console.log(`📚 Catálogo cargado: ${counts.comics} cómics`);
     }
-    
+
+    // Construir estructura de carpetas desde el catálogo y guardar en variable global
+    comicsStructure = buildFolderStructureFromCatalog(comicsCatalog);
+
     // Mostrar vista de carpetas principales
     displayFolderView(comicsStructure);
-    
+
     showLoader(false);
   } catch (error) {
     console.error('Error cargando cómics:', error);
     showLoader(false);
   }
+}
+
+/**
+ * Construir estructura de carpetas desde el catálogo del NAS
+ * Convierte la estructura plana del catálogo a la estructura jerárquica esperada
+ */
+function buildFolderStructureFromCatalog(catalog) {
+  if (!catalog || !catalog.items) {
+    return { folders: {}, comics: [] };
+  }
+
+  const structure = { folders: {}, comics: [] };
+
+  function processItems(items, targetStructure) {
+    for (const item of items) {
+      if (item.type === 'dir') {
+        // Es una carpeta
+        targetStructure.folders[item.name] = { folders: {}, comics: [] };
+        if (item.items && item.items.length > 0) {
+          processItems(item.items, targetStructure.folders[item.name]);
+        }
+      } else if (item.type === 'file') {
+        // Es un archivo de cómic
+        const ext = (item.ext || '').toLowerCase();
+        if (ext === '.cbz' || ext === '.cbr') {
+          targetStructure.comics.push(item.name);
+        }
+      }
+    }
+  }
+
+  processItems(catalog.items, structure);
+  return structure;
 }
 
 /**
@@ -306,40 +347,43 @@ function extractTitle(filename) {
 
 /**
  * Abrir un cómic
+ * @param {string} comicPath - Path del cómic (puede ser formato legacy o relpath directo)
  */
 async function openComic(comicPath) {
   try {
     showLoader(true);
-    
-    // Primero obtener los metadatos para tener la URL correcta
-    const metadata = await getComicMetadata(comicPath).catch(() => null);
-    let realPath = comicPath;
-    
-    if (metadata && metadata.originalFilename) {
-      // Si tenemos metadatos, usar el path original real
-      realPath = metadata.path || metadata.originalFilename || comicPath;
+
+    // Resolver el relpath real usando el catálogo
+    const relpath = await getComicUrl(comicPath);
+    const isCbz = relpath.toLowerCase().endsWith('.cbz');
+    const isCbr = relpath.toLowerCase().endsWith('.cbr');
+
+    if (!isCbz && !isCbr) {
+      throw new Error('Formato no soportado. Solo CBZ/CBR.');
     }
-    
-    // Obtener el archivo del cómic con la ruta correcta
-    const comicFile = await fetchComic(realPath);
-    
-    // Extraer páginas según el formato
-    // Ahora solo procesamos CBZ (archivos ZIP)
-    if (comicPath.toLowerCase().endsWith('.cbz')) {
+
+    // Guardar el relpath resuelto como cómic actual (antes de descargar)
+    currentComic = relpath;
+
+    const comicFile = await fetchComic(relpath);
+
+    if (isCbz) {
       await extractCBZ(comicFile);
-    } else {
-      throw new Error('Solo se soportan archivos CBZ');
+    } else if (isCbr) {
+      // TODO: Implementar soporte protegido para CBR con CBReader o conversión previa
+      await extractCBZ(comicFile); // Fallback provisional
     }
-    
+
     // Mostrar el visor
     showViewer(true);
-    
-    // Cargar historial de lectura si existe
+
+    // Cargar historial de lectura si existe (usando relpath como ID)
     let startPage = 0;
     if (currentUser) {
       try {
         const historyArray = await getComicHistoryFromFirebase(currentUser.email);
-        const comicId = btoa(comicPath); // Mismo ID que usa saveComicProgressToFirebase
+        // Usar relpath como identificador único del cómic
+        const comicId = btoa(relpath);
         const savedComic = historyArray.find(item => item.id === comicId);
         if (savedComic && savedComic.currentPage > 0) {
           startPage = savedComic.currentPage;
@@ -349,13 +393,10 @@ async function openComic(comicPath) {
         console.warn('Error cargando historial:', error);
       }
     }
-    
+
     // Cargar la página guardada o la primera
     loadPage(startPage);
-    
-    // Guardar el cómic actual para el tracking de progreso
-    currentComic = comicPath;
-    
+
     showLoader(false);
   } catch (error) {
     console.error('Error abriendo cómic:', error);
@@ -365,39 +406,67 @@ async function openComic(comicPath) {
 }
 
 /**
- * Obtener URL del cómic (copiado exactamente de audiolibros)
+ * Resolver el relpath real de un cómic usando el catálogo como fuente de verdad.
+ * Si el catálogo no está disponible, usa la conversión legacy.
+ *
+ * @param {string} comicPath - Path del cómic (puede tener formato legacy con | o _)
+ * @returns {string} relpath real del archivo en el NAS
  */
 async function getComicUrl(comicPath) {
-  console.log('📚 Solicitando URL firmada para cómic:', comicPath);
-
-  // Convertir solo subcarpetas, mantener carpeta principal con underscore
+  // 1. Convertir formato legacy (FANTASTIC_FOUR|Carpeta|Archivo.cbz) a path
+  // NO convertir a minúsculas - las rutas en el servidor mantienen su case original
   const pathParts = comicPath.replace(/\|/g, '/').split('/');
   const fixedParts = pathParts.map((part, index) => {
     if (index === 0) return part; // Mantener primera carpeta (FANTASTIC_FOUR)
-    return part.replace(/_/g, ' '); // Convertir subcarpetas
+    return part.replace(/_/g, ' '); // Convertir guiones bajos a espacios en subcarpetas
   });
   const cleanPath = fixedParts.join('/');
 
-  const objectPath = `COMICS/${cleanPath}`;
-  const signedUrl = await storageService.getSignedUrl(objectPath, 'comic');
-  
-  console.log('📚 URL firmada del cómic:', signedUrl);
-  return signedUrl;
+  // 2. Obtener catálogo del contentService
+  const comicsCatalog = contentService.getCatalog('comics');
+
+  if (comicsCatalog) {
+    // Buscar por nombre de archivo (último segmento) - comparación case-insensitive
+    const filename = pathParts[pathParts.length - 1];
+    const allComics = getFilesByExtension(comicsCatalog, ['.cbz', '.cbr']);
+
+    const matchByName = allComics.find(node => {
+      const nodeName = node.name || node.relpath.split('/').pop();
+      // Comparar ignorando diferencias de _ vs espacio y case
+      const normalizedNodeName = nodeName.replace(/_/g, ' ').toLowerCase();
+      const normalizedSearch = filename.replace(/_/g, ' ').toLowerCase();
+      return normalizedNodeName === normalizedSearch;
+    });
+
+    if (matchByName) {
+      // Usar fullRelpath que incluye la sección (comics/)
+      const fullPath = matchByName.fullRelpath || `comics/${matchByName.relpath}`;
+      console.log('📂 Catálogo: encontrado por nombre:', fullPath);
+      return fullPath;
+    }
+
+    // Intentar búsqueda por relpath completo
+    const directNode = findNodeByRelpath(comicsCatalog, cleanPath);
+    if (directNode && directNode.type === 'file') {
+      const fullPath = directNode.fullRelpath || `comics/${directNode.relpath}`;
+      console.log('📂 Catálogo: encontrado por relpath:', fullPath);
+      return fullPath;
+    }
+
+    console.warn('⚠️ Catálogo: no se encontró el cómic, usando path tentativo:', cleanPath);
+  }
+
+  // 3. Fallback: devolver path con prefijo comics/
+  const tentativeRelpath = cleanPath.toLowerCase().startsWith('comics/') ? cleanPath : `comics/${cleanPath}`;
+  return tentativeRelpath;
 }
 
 /**
  * Obtener archivo del cómic
  */
-async function fetchComic(comicPath) {
-  const comicUrl = await getComicUrl(comicPath);
-  console.log('📚 URL del cómic:', comicUrl);
-  
-  const response = await fetch(comicUrl);
-  if (!response.ok) {
-    throw new Error(`No se pudo obtener el cómic: ${response.status} ${response.statusText}`);
-  }
-  
-  return await response.blob();
+async function fetchComic(relpath) {
+  console.log('📚 Descargando cómic vía downloadProtectedFile:', relpath);
+  return await downloadProtectedFile(relpath);
 }
 
 /**

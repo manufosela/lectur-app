@@ -1,3 +1,6 @@
+// TODO: Books module now relies on relpath + protected-download for any remote content
+// Uses catalog-loader to get real file structure from NAS (_aquitengolalista.json)
+
 /**
  * Books Module
  * Single Responsibility: Handle books-specific functionality
@@ -8,7 +11,8 @@ import { contentService } from './content.js';
 import { uiService } from './ui.js';
 import { authService } from './auth.js';
 import { navigationService } from './navigation.js';
-import { storageService } from './storage.js';
+import { downloadProtectedFile, getProtectedUrl } from './protected-download.js';
+import { findNodeByRelpath, getFilesByExtension } from './catalog-loader.js';
 
 export class BooksService {
   constructor() {
@@ -21,32 +25,35 @@ export class BooksService {
    */
   async init() {
     if (this.booksInitialized) return;
-    
+
     console.log('📚 Inicializando interfaz de libros');
-    
+
     // Show loader during initialization
     uiService.showLoading();
-    
+
     try {
-      // Only load book counts, NOT all books
-      await contentService.loadAllContent();
-      
+      // Cargar solo el catálogo de libros (no todos los catálogos)
+      await contentService.loadContentType('books');
+
       // Update UI counts
       this.updateBookCounts();
       this.generateAlphabetNavigation();
-      
+
       // Show initial message, NO books loaded
       this.showInitialMessage();
-      
+
       // Load user reading history only if authenticated
       const user = authService.getCurrentUser();
       if (user) {
         await this.loadReadingHistory();
       }
-      
+
       this.booksInitialized = true;
       console.log('✅ Interfaz de libros completamente inicializada');
-      
+
+      const counts = contentService.getContentCounts();
+      console.log(`📂 Catálogo de libros cargado: ${counts.books} archivos`);
+
     } catch (error) {
       console.error('Error inicializando libros:', error);
     } finally {
@@ -76,9 +83,8 @@ export class BooksService {
    */
   updateBookCounts() {
     const counts = contentService.getContentCounts();
-    
     uiService.setText('num-libros', counts.books);
-    uiService.setText('num-autores', counts.authors);
+    uiService.setText('num-autores', counts.authors || '—');
     uiService.setText('header-num-libros', counts.books);
   }
 
@@ -224,24 +230,39 @@ export class BooksService {
 
   /**
    * Create book table row HTML
+   * @param {string|object} book - Nombre del archivo o objeto del catálogo con {name, fullRelpath, relpath, ext}
    */
   createBookRow(book) {
-    const cleanTitle = this.extractCleanTitle(book);
-    const author = this.extractAuthorFromFilename(book);
-    const extension = book.split('.').pop().toUpperCase();
-    
+    // Soportar tanto strings (legacy) como objetos del catálogo NAS
+    let fileName = typeof book === 'object' ? (book.name || book.relpath?.split('/').pop()) : book;
+    let bookPath = typeof book === 'object' ? (book.fullRelpath || book.relpath || book.name) : book;
+
+    // Limpiar extensiones duplicadas (e.g., .pdf.pdf -> .pdf, .epub.epub -> .epub)
+    fileName = fileName?.replace(/\.(epub|pdf)\.\1$/i, '.$1') || fileName;
+    bookPath = bookPath?.replace(/\.(epub|pdf)\.\1$/i, '.$1') || bookPath;
+
+    const extension = typeof book === 'object' ? (book.ext || '').replace('.', '').toUpperCase() : fileName.split('.').pop().toUpperCase();
+
+    // Asegurar que bookPath tenga el prefijo libros/
+    if (bookPath && !bookPath.toLowerCase().startsWith('libros/')) {
+      bookPath = `libros/${bookPath}`;
+    }
+
+    const cleanTitle = this.extractCleanTitle(fileName);
+    const author = this.extractAuthorFromFilename(fileName);
+
     return `
-      <tr class="book-row" data-book="${book}">
-        <td class="book-title clickable-title" data-book="${book}" title="Clic para leer">${cleanTitle}</td>
+      <tr class="book-row" data-book="${bookPath}">
+        <td class="book-title clickable-title" data-book="${bookPath}" title="Clic para leer">${cleanTitle}</td>
         <td class="book-author">${author}</td>
         <td class="book-format">
           <span class="format-badge format-${extension.toLowerCase()}">${extension}</span>
         </td>
         <td class="book-action">
-          <button class="read-btn" data-book="${book}" title="Leer libro">📖 Leer</button>
+          <button class="read-btn" data-book="${bookPath}" title="Leer libro">📖 Leer</button>
         </td>
         <td class="book-action">
-          <button class="info-btn" data-book="${book}" title="Ver información">ℹ️ Info</button>
+          <button class="info-btn" data-book="${bookPath}" title="Ver información">ℹ️ Info</button>
         </td>
       </tr>
     `;
@@ -252,35 +273,27 @@ export class BooksService {
    * Handles formats: TITULO_LIBRO-AUTOR_LIBRO.epub and TITULO_LIBRO-AUTOR_LIBRO-Otros.epub
    */
   extractAuthorFromFilename(filename) {
-    console.log('🔍 Extrayendo autor de:', filename);
-    
     // Remove extension first
     const withoutExt = filename.replace(/\.(epub|pdf)$/i, '');
-    console.log('📄 Sin extensión:', withoutExt);
-    
+
     // Pattern: "Title-Author" or "Title-Author-Otros"
     if (withoutExt.includes('-')) {
       const parts = withoutExt.split('-');
-      console.log('📚 Partes encontradas:', parts);
-      
+
       if (parts.length >= 2) {
         let authorPart = parts[parts.length - 1].replace(/_/g, ' ').trim();
-        
+
         // Check if last part is "Otros"
         if (authorPart.toLowerCase() === 'otros' && parts.length >= 3) {
           // If last part is "Otros", combine author with "y otros"
           const actualAuthor = parts[parts.length - 2].replace(/_/g, ' ').trim();
           authorPart = `${actualAuthor} y otros`;
-          console.log('🔄 Detectado "Otros", combinando:', authorPart);
         }
-        
-        console.log('👤 Autor extraído:', authorPart);
+
         return authorPart;
       }
     }
-    
-    // If no pattern found, return "Autor desconocido"
-    console.log('❌ No se pudo extraer autor');
+
     return 'Autor desconocido';
   }
 
@@ -289,40 +302,31 @@ export class BooksService {
    * Handles formats: TITULO_LIBRO-AUTOR_LIBRO.epub and TITULO_LIBRO-AUTOR_LIBRO-Otros.epub
    */
   extractCleanTitle(filename) {
-    console.log('🔍 Extrayendo título de:', filename);
-    
     // Remove extension first
     const withoutExt = filename.replace(/\.(epub|pdf)$/i, '');
-    console.log('📄 Sin extensión:', withoutExt);
-    
+
     // Pattern: "Title-Author" or "Title-Author-Otros"
     if (withoutExt.includes('-')) {
       const parts = withoutExt.split('-');
-      console.log('📚 Partes encontradas:', parts);
-      
+
       if (parts.length >= 2) {
         let titlePartsCount = parts.length - 1; // By default, exclude last part (author)
-        
+
         // Check if last part is "Otros"
         const lastPart = parts[parts.length - 1].replace(/_/g, ' ').trim();
         if (lastPart.toLowerCase() === 'otros' && parts.length >= 3) {
           // If last part is "Otros", exclude both "Otros" and the actual author
           titlePartsCount = parts.length - 2;
-          console.log('🔄 Detectado "Otros", excluyendo 2 partes del final');
         }
-        
+
         // Title is everything before the author part(s), convert _ to spaces
         const titleParts = parts.slice(0, titlePartsCount);
-        const title = titleParts.join('-').replace(/_/g, ' ').trim();
-        console.log('📖 Título extraído:', title);
-        return title;
+        return titleParts.join('-').replace(/_/g, ' ').trim();
       }
     }
-    
+
     // If no pattern found, return the whole cleaned name (convert _ to spaces)
-    const cleanTitle = withoutExt.replace(/_/g, ' ').trim();
-    console.log('📖 Título completo (sin guiones):', cleanTitle);
-    return cleanTitle;
+    return withoutExt.replace(/_/g, ' ').trim();
   }
 
   /**
@@ -351,19 +355,18 @@ export class BooksService {
 
   /**
    * Open book for reading
+   * @param {string} bookPath - Nombre del libro o ruta relativa (e.g., "libro.epub" o "libros/libro.epub")
    */
   async openBook(bookPath, startChapter = 1) {
     try {
-      const objectPath = `LIBROS/${bookPath}`;
-      const bookUrl = await storageService.getSignedUrl(objectPath, 'book');
-      
-      // No sobrescribir progreso existente
-      // this.saveToHistory(bookPath); // Comentado: el progreso se guarda al navegar
-      
-      // Open in reader
-      const cleanTitle = uiService.cleanTitle(bookPath);
+      // Resolver el relpath real usando el catálogo
+      const relpath = await this.resolveBookRelpath(bookPath);
+
+      // Extraer nombre de archivo del path para el título
+      const fileName = relpath.split('/').pop() || bookPath;
+      const cleanTitle = uiService.cleanTitle(fileName);
       const currentUser = authService.getCurrentUser();
-      navigationService.openReader(bookUrl, cleanTitle, currentUser?.email, bookPath, startChapter);
+      navigationService.openReader(relpath, cleanTitle, currentUser?.email, relpath, startChapter);
     } catch (error) {
       console.error('❌ Error en openBook:', error);
       console.error('📍 Error stack:', error.stack);
@@ -371,11 +374,69 @@ export class BooksService {
   }
 
   /**
+   * Resolver el relpath real de un libro usando el catálogo.
+   * @param {string} bookPath - Nombre del libro o path parcial
+   * @returns {string} relpath completo incluyendo prefijo libros/
+   */
+  async resolveBookRelpath(bookPath) {
+    // Extraer ruta si viene como objeto
+    const inputPath = bookPath?.path || bookPath;
+
+    // Si ya tiene libros/ al inicio, es un relpath completo - usarlo directamente
+    const lowerInput = inputPath.toLowerCase();
+    if (lowerInput.startsWith('libros/')) {
+      console.log('📂 Path ya incluye libros/:', inputPath);
+      return inputPath;
+    }
+
+    // Si solo es un nombre de archivo, buscar en el catálogo
+    const booksCatalog = contentService.getCatalog('books');
+    if (booksCatalog) {
+      const allBooks = getFilesByExtension(booksCatalog, ['.epub', '.pdf']);
+
+      // Buscar por nombre exacto
+      const matchByName = allBooks.find(node => {
+        const nodeName = node.name || node.relpath.split('/').pop();
+        return nodeName === inputPath;
+      });
+
+      if (matchByName) {
+        // Usar fullRelpath que incluye el prefijo de sección (libros/)
+        const fullPath = matchByName.fullRelpath || `libros/${matchByName.relpath}`;
+        console.log('📂 Catálogo: libro encontrado por nombre:', fullPath);
+        return fullPath;
+      }
+
+      // Buscar ignorando diferencias de _ vs espacio
+      const normalizedSearch = inputPath.replace(/_/g, ' ').toLowerCase();
+      const matchNormalized = allBooks.find(node => {
+        const nodeName = node.name || node.relpath.split('/').pop();
+        const normalizedNodeName = nodeName.replace(/_/g, ' ').toLowerCase();
+        return normalizedNodeName === normalizedSearch;
+      });
+
+      if (matchNormalized) {
+        // Usar fullRelpath que incluye el prefijo de sección (libros/)
+        const fullPath = matchNormalized.fullRelpath || `libros/${matchNormalized.relpath}`;
+        console.log('📂 Catálogo: libro encontrado (normalizado):', fullPath);
+        return fullPath;
+      }
+
+      console.warn('⚠️ Catálogo: libro no encontrado, usando path tentativo');
+    }
+
+    // Fallback: asumir que está en libros/
+    return `libros/${inputPath}`;
+  }
+
+  /**
    * Show book information modal
    */
   async showBookInfo(bookPath) {
-    const cleanTitle = this.extractCleanTitle(bookPath);
-    const author = this.extractAuthorFromFilename(bookPath);
+    // Extraer nombre de archivo del path (puede ser fullRelpath como "libros/archivo.epub")
+    const fileName = bookPath.split('/').pop() || bookPath;
+    const cleanTitle = this.extractCleanTitle(fileName);
+    const author = this.extractAuthorFromFilename(fileName);
     
     // Show modal with loading state
     uiService.setText('modal-title', cleanTitle);

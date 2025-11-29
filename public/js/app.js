@@ -19,22 +19,23 @@ class LecturApp {
    */
   async init() {
     if (this.initialized) return;
-    
+
     console.log('🚀 Inicializando LecturAPP');
-    
+
     try {
-      // Initialize core services
-      await this.initializeServices();
-      
-      // Setup event listeners
+      // Setup event listeners first
       this.setupEventListeners();
-      
-      // Setup authentication
+
+      // Setup authentication callback BEFORE initializing auth service
+      // This ensures the callback is registered before Firebase fires auth state
       this.setupAuthentication();
-      
+
+      // Initialize core services (this triggers auth.onAuthStateChanged)
+      await this.initializeServices();
+
       this.initialized = true;
       console.log('✅ LecturAPP inicializada correctamente');
-      
+
     } catch (error) {
       console.error('❌ Error inicializando LecturAPP:', error);
     }
@@ -75,18 +76,21 @@ class LecturApp {
    * Handle authenticated user
    */
   async handleAuthenticatedUser(user) {
+    console.log('👤 handleAuthenticatedUser called for:', user?.email);
     try {
       uiService.hideLoginScreen();
       uiService.hideLoginError();
-      
+
       // Update user info in UI
       uiService.setText('menu-user-email', user.email);
-      
+
       // Load and update content counts
+      console.log('📊 Calling updateCategoryCounts...');
       await this.updateCategoryCounts();
-      
+      console.log('✅ updateCategoryCounts completed');
+
     } catch (error) {
-      console.error('Error handling authenticated user:', error);
+      console.error('❌ Error handling authenticated user:', error);
       uiService.showLoginError();
     }
   }
@@ -100,19 +104,55 @@ class LecturApp {
 
   /**
    * Update category counts in the UI
+   * First loads static stats (fast), then updates from NAS catalogs (accurate)
    */
   async updateCategoryCounts() {
     try {
+      // 1. Cargar stats estáticos primero (instantáneo)
+      await this.loadStaticStats();
+
+      // 2. Luego actualizar desde los catálogos del NAS (más lento pero preciso)
       await contentService.loadAllContent();
       const counts = contentService.getContentCounts();
 
-      uiService.setText('books-count', counts.books);
-      uiService.setText('audiobooks-count', counts.audiobooks);
-      uiService.setText('comics-count', counts.comics);
+      uiService.setText('books-count', counts.books.toLocaleString('es-ES'));
+      uiService.setText('audiobooks-count', counts.audiobooks.toLocaleString('es-ES'));
+      uiService.setText('comics-count', counts.comics.toLocaleString('es-ES'));
 
-      console.log(`📊 Contadores actualizados: ${counts.books} libros, ${counts.audiobooks} audiolibros, ${counts.comics} cómics`);
+      console.log(`📊 Contadores actualizados desde NAS: ${counts.books} libros, ${counts.audiobooks} audiolibros, ${counts.comics} cómics`);
     } catch (error) {
       console.error('Error actualizando contadores:', error);
+    }
+  }
+
+  /**
+   * Load static stats from pre-generated JSON on NAS
+   */
+  async loadStaticStats() {
+    try {
+      // Importar downloadProtectedFile para acceder al NAS
+      const { downloadProtectedFile } = await import('./modules/protected-download.js');
+      const blob = await downloadProtectedFile('stats/_stats_summary.json');
+      const text = await blob.text();
+      const data = JSON.parse(text);
+      const stats = data.totals || {};
+
+      // Solo mostrar si hay datos válidos (> 0)
+      if (stats.books > 0) {
+        uiService.setText('books-count', stats.books.toLocaleString('es-ES'));
+      }
+      if (stats.audiobooks > 0) {
+        uiService.setText('audiobooks-count', stats.audiobooks.toLocaleString('es-ES'));
+      }
+      if (stats.comics > 0) {
+        uiService.setText('comics-count', stats.comics.toLocaleString('es-ES'));
+      }
+      if (stats.books > 0 || stats.audiobooks > 0 || stats.comics > 0) {
+        console.log(`📊 Stats del NAS cargados: ${stats.books} libros, ${stats.audiobooks} audiolibros, ${stats.comics} cómics`);
+      }
+    } catch (error) {
+      // Si no existe el archivo o falla, los catálogos los cargarán
+      console.log('Stats del NAS no disponibles, esperando catálogos...');
     }
   }
 

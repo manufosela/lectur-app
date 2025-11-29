@@ -1,13 +1,102 @@
+// TODO: All navigation-based content fetches must go through downloadProtectedFile() or getProtectedUrl()
+// Uses catalog-loader for resolving real file paths from NAS (_aquitengolalista.json)
+
 /**
  * Navigation Module
  * Single Responsibility: Handle navigation between pages and sections
  */
 
 import { saveReadingProgressToFirebase } from '../firebase-config.js';
+import { downloadProtectedFile, getProtectedUrl } from './protected-download.js';
+import { loadCatalog, findNodeByRelpath, getFilesByExtension } from './catalog-loader.js';
 
 export class NavigationService {
   constructor() {
     this.currentPage = this.getCurrentPage();
+    // Catálogos por sección (se cargan bajo demanda) - rutas en minúsculas
+    this.catalogs = {
+      libros: null,
+      audiolibros: null,
+      comics: null
+    };
+  }
+
+  /**
+   * Cargar catálogo para una sección específica
+   * @param {string} section - 'libros', 'audiolibros', o 'comics' (minúsculas)
+   * @returns {Promise<object|null>} Catálogo cargado o null si falla
+   */
+  async loadSectionCatalog(section) {
+    const sectionKey = section.toLowerCase();
+    if (this.catalogs[sectionKey]) {
+      return this.catalogs[sectionKey];
+    }
+
+    try {
+      const catalog = await loadCatalog(sectionKey);
+      this.catalogs[sectionKey] = catalog;
+      console.log(`📂 Catálogo ${sectionKey} cargado en NavigationService`);
+      return catalog;
+    } catch (error) {
+      console.warn(`⚠️ No se pudo cargar catálogo ${sectionKey}:`, error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Resolver relpath real de un archivo usando el catálogo
+   * @param {string} section - 'libros', 'audiolibros', o 'comics' (minúsculas)
+   * @param {string} filename - Nombre del archivo o path parcial
+   * @returns {Promise<string>} relpath completo incluyendo prefijo de sección
+   */
+  async resolveRelpath(section, filename) {
+    const sectionKey = section.toLowerCase();
+
+    // Si ya tiene la sección al inicio, usarlo directamente
+    const lowerFilename = filename.toLowerCase();
+    if (lowerFilename.startsWith(`${sectionKey}/`)) {
+      return filename;
+    }
+
+    const catalog = await this.loadSectionCatalog(sectionKey);
+
+    if (!catalog) {
+      // Fallback sin catálogo: añadir prefijo de sección
+      return `${sectionKey}/${filename}`;
+    }
+
+    // Buscar por nombre en el catálogo
+    const extensions = sectionKey === 'libros' ? ['.epub', '.pdf'] :
+                       sectionKey === 'audiolibros' ? ['.mp3', '.m4a', '.m4b'] :
+                       ['.cbz', '.cbr'];
+
+    const allFiles = getFilesByExtension(catalog, extensions);
+
+    // Buscar por nombre exacto
+    const matchByName = allFiles.find(node => {
+      const nodeName = node.name || node.relpath.split('/').pop();
+      return nodeName === filename;
+    });
+
+    if (matchByName) {
+      // Usar fullRelpath que incluye el prefijo de sección
+      return matchByName.fullRelpath || `${sectionKey}/${matchByName.relpath}`;
+    }
+
+    // Buscar ignorando _ vs espacio
+    const normalizedSearch = filename.replace(/_/g, ' ').toLowerCase();
+    const matchNormalized = allFiles.find(node => {
+      const nodeName = node.name || node.relpath.split('/').pop();
+      return nodeName.replace(/_/g, ' ').toLowerCase() === normalizedSearch;
+    });
+
+    if (matchNormalized) {
+      // Usar fullRelpath que incluye el prefijo de sección
+      return matchNormalized.fullRelpath || `${sectionKey}/${matchNormalized.relpath}`;
+    }
+
+    // Fallback: añadir prefijo de sección
+    return `${sectionKey}/${filename}`;
   }
 
   /**
@@ -51,24 +140,90 @@ export class NavigationService {
   }
 
   /**
-   * Open EPUB reader in modal
+   * Open book reader - EPUB in modal, PDF in new tab
+   * @param {string|object} path - Ruta relativa del archivo (e.g., "libros/libro.epub") o objeto con .path
    */
-  openReader(contentUrl, title, userEmail = null, bookPath = null, startChapter = 1) {
-    // Import UI service and open modal
-    import('./ui.js').then(({ uiService }) => {
-      this.openEpubModal(contentUrl, title, userEmail, bookPath, startChapter);
-    });
+  async openReader(path, title, userEmail = null, bookPath = null, startChapter = 1) {
+    let relpath = path?.path || path || bookPath;
+
+    // Si no tiene sección al inicio, intentar resolver usando catálogo de libros
+    const lowerRelpath = relpath?.toLowerCase() || '';
+    if (relpath && !lowerRelpath.startsWith('libros/') && !lowerRelpath.startsWith('audiolibros/') && !lowerRelpath.startsWith('comics/')) {
+      relpath = await this.resolveRelpath('libros', relpath);
+    }
+
+    // Detectar si es PDF o EPUB
+    const isPdf = relpath.toLowerCase().endsWith('.pdf');
+
+    if (isPdf) {
+      // PDFs: abrir en modal con visor integrado
+      this.openPdfModal(relpath, title, userEmail);
+    } else {
+      // EPUBs: abrir en modal con lector integrado
+      this.openEpubModal(relpath, title, userEmail, relpath, startChapter);
+    }
   }
 
   /**
-   * Open EPUB reader modal
+   * Open PDF viewer modal
+   * @param {string} relpath - Ruta relativa del archivo (e.g., "libros/libro.pdf")
    */
-  openEpubModal(contentUrl, title, userEmail = null, bookPath = null, startChapter = 1) {
+  async openPdfModal(relpath, title, userEmail = null) {
     const modal = document.getElementById('epub-reader-modal');
     const readerTitle = document.getElementById('reader-title');
     const epubViewer = document.getElementById('epub-viewer');
     const epubLoading = document.getElementById('epub-loading');
-    
+
+    if (!modal || !readerTitle || !epubViewer) {
+      console.error('Modal elements not found');
+      return;
+    }
+
+    // Set title
+    const cleanTitle = this.extractCleanTitle(title);
+    readerTitle.textContent = cleanTitle;
+
+    // Show modal and loading
+    modal.classList.remove('hidden');
+    epubLoading.style.display = 'block';
+    epubViewer.innerHTML = '';
+
+    try {
+      console.log('📄 Cargando PDF:', relpath);
+      const blob = await downloadProtectedFile(relpath);
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Ocultar loading y mostrar PDF en iframe
+      epubLoading.style.display = 'none';
+      epubViewer.innerHTML = `
+        <iframe
+          src="${blobUrl}"
+          style="width: 100%; height: 100%; border: none; min-height: 80vh;"
+          title="${cleanTitle}"
+        ></iframe>
+      `;
+
+      // Guardar referencia para limpiar al cerrar
+      this.currentPdfBlobUrl = blobUrl;
+
+      console.log('✅ PDF cargado correctamente');
+    } catch (error) {
+      console.error('❌ Error cargando PDF:', error);
+      epubLoading.style.display = 'none';
+      epubViewer.innerHTML = `<p style="color: red; padding: 2rem;">Error al cargar el PDF: ${error.message}</p>`;
+    }
+  }
+
+  /**
+   * Open EPUB reader modal
+   * @param {string} relpath - Ruta relativa del archivo (e.g., "libros/libro.epub")
+   */
+  openEpubModal(relpath, title, userEmail = null, bookPath = null, startChapter = 1) {
+    const modal = document.getElementById('epub-reader-modal');
+    const readerTitle = document.getElementById('reader-title');
+    const epubViewer = document.getElementById('epub-viewer');
+    const epubLoading = document.getElementById('epub-loading');
+
     if (!modal || !readerTitle || !epubViewer) {
       console.error('Modal elements not found');
       return;
@@ -77,47 +232,31 @@ export class NavigationService {
     // Set title using clean title extraction
     const cleanTitle = this.extractCleanTitle(title);
     readerTitle.textContent = cleanTitle;
-    
+
     // Show modal
     modal.classList.remove('hidden');
-    
+
     // Show loading
     epubLoading.style.display = 'block';
-    
-    // Load EPUB
-    this.loadEpub(contentUrl, epubViewer, epubLoading, userEmail, bookPath, startChapter);
+
+    // Load EPUB using protected download
+    this.loadEpub(relpath, epubViewer, epubLoading, userEmail, bookPath, startChapter);
   }
 
   /**
    * Load EPUB content using JSZip
+   * @param {string} relpath - Ruta relativa del archivo (e.g., "LIBROS/libro.epub")
    */
-   async loadEpub(contentUrl, viewer, loading, userEmail = null, bookPath = null, startChapter = 1) {
+  async loadEpub(relpath, viewer, loading, userEmail = null, bookPath = null, startChapter = 1) {
     try {
-      console.log('🔄 Cargando EPUB (URL firmada):', contentUrl);
-      
-      // Extract book path from URL if not provided
-      const extractedPath = contentUrl.split('/').pop();
-      const finalBookPath = bookPath || extractedPath;
+      console.log('🔄 Cargando EPUB (descarga protegida):', relpath);
+
+      const finalBookPath = bookPath || relpath;
       console.log('📁 Ruta del libro:', finalBookPath);
 
-      const response = await fetch(contentUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/octet-stream, application/epub+zip, */*'
-        }
-      });
-      
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error response body:', errorText);
-        throw new Error(`Error HTTP ${response.status} en Cloud Function: ${errorText}`);
-      }
-      
-      const blob = await response.blob();
-      console.log('📦 EPUB descargado vía Cloud Function, procesando...');
+      // Descargar EPUB usando helper de descargas protegidas
+      const blob = await downloadProtectedFile(relpath);
+      console.log('📦 EPUB descargado vía descarga protegida, procesando...');
       
       // Process EPUB with JSZip
       const zip = new JSZip();
@@ -141,7 +280,7 @@ export class NavigationService {
       const epubAuthor = opfDoc.querySelector('creator')?.textContent || 'Autor desconocido';
       
       // Extract title and author from filename (more reliable)
-      const filename = contentUrl.split('/').pop();
+      const filename = relpath.split('/').pop();
       const cleanTitle = this.extractCleanTitle(filename);
       const filenameAuthor = this.extractAuthorFromFilename(filename);
       

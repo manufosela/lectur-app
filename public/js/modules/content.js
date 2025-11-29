@@ -1,73 +1,97 @@
 /**
  * Content Management Module
- * Single Responsibility: Handle content loading and display operations
+ * Single Responsibility: Handle content loading from NAS catalogs.
+ *
+ * IMPORTANT: Content catalogs are loaded from NAS JSONs, NOT Firebase.
+ * Firebase is ONLY used for reading history/progress.
  */
 
-import { 
-  getBooksNamesList, 
-  getAudiobooksList,
-  getComicsList,
-  getAutorsNamesList, 
-  getAutorsBooks,
+import { loadCatalog, getFilesByExtension } from './catalog-loader.js';
+import {
   saveReadingProgressToFirebase,
   getReadingHistoryFromFirebase
 } from '../firebase-config.js';
 
 export class ContentService {
   constructor() {
+    // Catálogos cargados del NAS
+    this.booksCatalog = null;
+    this.audiobooksCatalog = null;
+    this.comicsCatalog = null;
+
+    // Listas de archivos extraídas de los catálogos
     this.books = [];
     this.audiobooks = [];
     this.comics = [];
-    this.authors = [];
-    this.authorBooks = {};
   }
 
   /**
-   * Load all content from Firebase
+   * Load a specific content type from NAS catalog
+   * @param {string} type - 'books', 'audiobooks', or 'comics'
+   */
+  async loadContentType(type) {
+    const catalogMap = {
+      books: { path: 'libros', extensions: ['.epub', '.pdf'], prop: 'booksCatalog', list: 'books' },
+      audiobooks: { path: 'audiolibros', extensions: ['.mp3', '.m4a', '.m4b'], prop: 'audiobooksCatalog', list: 'audiobooks' },
+      comics: { path: 'comics', extensions: ['.cbz', '.cbr'], prop: 'comicsCatalog', list: 'comics' }
+    };
+
+    const config = catalogMap[type];
+    if (!config) {
+      console.warn(`❌ Tipo de contenido desconocido: ${type}`);
+      return [];
+    }
+
+    // Si ya está cargado, devolver directamente
+    if (this[config.prop]) {
+      return this[config.list];
+    }
+
+    console.log(`📥 Cargando catálogo de ${type}...`);
+    try {
+      const catalog = await loadCatalog(config.path);
+      this[config.prop] = catalog;
+      this[config.list] = getFilesByExtension(catalog, config.extensions);
+      console.log(`✅ ${type} cargados: ${this[config.list].length}`);
+      return this[config.list];
+    } catch (error) {
+      console.warn(`❌ Error loading ${type} catalog:`, error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Load all content from NAS catalogs
    */
   async loadAllContent() {
+    console.log('📥 Cargando catálogos desde NAS...');
     try {
-      const [books, audiobooks, comics, authors, authorBooks] = await Promise.all([
-        getBooksNamesList().catch((error) => { 
-          console.warn('Error loading books:', error);
-          return [];
-        }),
-        getAudiobooksList().catch((error) => { 
-          console.warn('Error loading audiobooks:', error);
-          return [];
-        }),
-        getComicsList().catch((error) => { 
-          console.warn('Error loading comics:', error);
-          return [];
-        }),
-        getAutorsNamesList().catch((error) => { 
-          console.warn('Error loading authors:', error);
-          return [];
-        }),
-        getAutorsBooks().catch((error) => { 
-          console.warn('Error loading author books:', error);
-          return {};
-        })
-      ]);
+      // Cargar solo los catálogos que no estén ya cargados
+      const promises = [];
 
-      // Ensure all values are arrays/objects
-      this.books = Array.isArray(books) ? books : [];
-      this.audiobooks = Array.isArray(audiobooks) ? audiobooks : [];
-      this.comics = Array.isArray(comics) ? comics : [];
-      this.authors = Array.isArray(authors) ? authors : [];
-      this.authorBooks = typeof authorBooks === 'object' && authorBooks !== null ? authorBooks : {};
+      if (!this.booksCatalog) {
+        promises.push(this.loadContentType('books'));
+      }
+      if (!this.audiobooksCatalog) {
+        promises.push(this.loadContentType('audiobooks'));
+      }
+      if (!this.comicsCatalog) {
+        promises.push(this.loadContentType('comics'));
+      }
 
-      console.log(`📚 Content loaded: ${this.books.length} books, ${this.audiobooks.length} audiobooks, ${this.comics.length} comics`);
-      
+      if (promises.length > 0) {
+        await Promise.all(promises);
+      }
+
+      console.log(`📥 Catálogos cargados: ${this.books.length} libros, ${this.audiobooks.length} audiolibros, ${this.comics.length} cómics`);
+
       return {
         books: this.books,
         audiobooks: this.audiobooks,
-        comics: this.comics,
-        authors: this.authors,
-        authorBooks: this.authorBooks
+        comics: this.comics
       };
     } catch (error) {
-      console.error('Error loading content:', error);
+      console.error('Error loading catalogs:', error);
       throw error;
     }
   }
@@ -94,17 +118,19 @@ export class ContentService {
   }
 
   /**
-   * Get authors list
+   * Get catalog by type
    */
-  getAuthors() {
-    return this.authors;
-  }
-
-  /**
-   * Get books by author
-   */
-  getBooksByAuthor(author) {
-    return this.authorBooks[author] || [];
+  getCatalog(type) {
+    switch (type) {
+      case 'books':
+        return this.booksCatalog;
+      case 'audiobooks':
+        return this.audiobooksCatalog;
+      case 'comics':
+        return this.comicsCatalog;
+      default:
+        return null;
+    }
   }
 
   /**
@@ -115,36 +141,12 @@ export class ContentService {
     if (!query.trim()) {
       return content;
     }
-    
-    const normalizedQuery = query.toLowerCase();
-    return content.filter(item => 
-      item.toLowerCase().includes(normalizedQuery)
-    );
-  }
 
-  /**
-   * Search books by author
-   */
-  searchByAuthor(query) {
-    if (!query.trim()) {
-      return this.books;
-    }
-    
     const normalizedQuery = query.toLowerCase();
-    const matchingAuthors = this.authors.filter(author => 
-      author.toLowerCase().includes(normalizedQuery)
-    );
-    
-    // Get books from matching authors
-    let foundBooks = [];
-    matchingAuthors.forEach(author => {
-      if (this.authorBooks[author]) {
-        foundBooks.push(...this.authorBooks[author]);
-      }
+    return content.filter(item => {
+      const name = item.name || item.clean_name || '';
+      return name.toLowerCase().includes(normalizedQuery);
     });
-    
-    // Remove duplicates
-    return [...new Set(foundBooks)];
   }
 
   /**
@@ -155,10 +157,11 @@ export class ContentService {
     if (letter === 'all') {
       return content;
     }
-    
-    return content.filter(item => 
-      item.toUpperCase().startsWith(letter.toUpperCase())
-    );
+
+    return content.filter(item => {
+      const name = item.clean_name || item.name || '';
+      return name.toUpperCase().startsWith(letter.toUpperCase());
+    });
   }
 
   /**
@@ -184,33 +187,8 @@ export class ContentService {
     return {
       books: this.books.length,
       audiobooks: this.audiobooks.length,
-      comics: this.comics.length,
-      authors: this.authors.length
+      comics: this.comics.length
     };
-  }
-
-  /**
-   * Generate content URL for Nginx serving
-   */
-  generateContentUrl(contentPath, contentType) {
-    const baseUrl = 'https://storage.lecturapp.es';
-    let directory;
-    
-    switch (contentType) {
-      case 'books':
-        directory = 'LIBROS';
-        break;
-      case 'audiobooks':
-        directory = 'AUDIOLIBROS';
-        break;
-      case 'comics':
-        directory = 'COMICS';
-        break;
-      default:
-        directory = 'LIBROS';
-    }
-    
-    return `${baseUrl}/${directory}/${encodeURIComponent(contentPath)}`;
   }
 
   /**

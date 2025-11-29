@@ -1,15 +1,19 @@
+// TODO: All audio fetching must go exclusively through downloadProtectedFile()
 /**
  * Reproductor de audiolibros para LecturAPP
  * Incluye controles avanzados, guardado de progreso y gestión de historial
+ *
+ * Firebase solo se usa para historial de escucha
  */
 
-import { 
-  getAudiobooksList, 
-  auth, 
-  saveAudiobookProgressToFirebase, 
-  getAudiobookHistoryFromFirebase 
+import {
+  auth,
+  saveAudiobookProgressToFirebase,
+  getAudiobookHistoryFromFirebase
 } from './firebase-config.js';
-import { storageService } from './modules/storage.js';
+
+import { downloadProtectedFile } from './modules/protected-download.js';
+import { contentService } from './modules/content.js';
 
 // Variables globales
 let currentAudiobook = null;
@@ -189,24 +193,29 @@ function setupProgressBar() {
 }
 
 /**
- * Cargar lista de audiolibros
+ * Cargar lista de audiolibros desde el catálogo del NAS
  */
 async function loadAudiobooks() {
   try {
     showLoader(true);
-    
-    // Obtener lista de audiolibros
-    audiobooksList = await getAudiobooksList().catch(() => []);
-    
+
+    // Cargar solo el catálogo de audiolibros (no todos los catálogos)
+    await contentService.loadContentType('audiobooks');
+
+    // Obtener lista de audiolibros del contentService
+    audiobooksList = contentService.getAudiobooks();
+    const counts = contentService.getContentCounts();
+
     // Actualizar contador
     const audiobooksCount = document.getElementById('header-num-audiobooks');
     if (audiobooksCount) {
-      audiobooksCount.textContent = audiobooksList.length;
+      audiobooksCount.textContent = counts.audiobooks;
+      console.log(`🎧 Catálogo cargado: ${counts.audiobooks} audiolibros`);
     }
-    
+
     // Mostrar audiolibros en la galería
     displayAudiobooks(audiobooksList);
-    
+
     showLoader(false);
   } catch (error) {
     console.error('Error cargando audiolibros:', error);
@@ -220,14 +229,14 @@ async function loadAudiobooks() {
 function displayAudiobooks(audiobooks) {
   const container = document.getElementById('audiobooks');
   const resultsCount = document.getElementById('num-audiobooks-results');
-  
+
   if (!container) return;
 
   // Actualizar contador de resultados
   if (resultsCount) {
     resultsCount.textContent = `${audiobooks.length} audiolibros encontrados`;
   }
-  
+
   if (audiobooks.length === 0) {
     container.innerHTML = `
       <div class="initial-message">
@@ -238,7 +247,7 @@ function displayAudiobooks(audiobooks) {
     `;
     return;
   }
-  
+
   // Crear tabla compacta como la de libros
   container.innerHTML = `
     <table class="audiobooks-table">
@@ -254,23 +263,24 @@ function displayAudiobooks(audiobooks) {
       </thead>
       <tbody>
         ${audiobooks.map(audiobook => {
-          // Obtener el nombre del archivo
-          const fileName = audiobook.archivo || audiobook.path || audiobook;
-          const originalTitle = audiobook.titulo || audiobook.title || extractTitle(audiobook);
+          // Soportar tanto formato catálogo NAS (name, fullRelpath) como formato legacy (archivo, titulo)
+          const fileName = audiobook.name || audiobook.archivo || audiobook.path || audiobook;
+          const filePath = audiobook.fullRelpath || audiobook.relpath || fileName;
+          const originalTitle = audiobook.titulo || audiobook.title || extractTitle(fileName);
           const originalAuthor = audiobook.autor || audiobook.author || 'Desconocido';
-          
+
           // Normalizar metadatos si parece ser un nombre de archivo crudo
           let displayTitle = originalTitle;
           let displayAuthor = originalAuthor;
-          
+
           if (originalTitle === extractTitle(fileName) && (originalTitle.includes('_') || originalTitle.match(/\d+\s*[-_]/))) {
             const normalized = normalizeAudiobookMetadata(originalTitle);
             displayTitle = normalized.title;
             displayAuthor = normalized.author !== 'Autor desconocido' ? normalized.author : originalAuthor;
           }
-          
+
           return `
-            <tr class="audiobook-row" data-path="${fileName}">
+            <tr class="audiobook-row" data-path="${filePath}">
               <td class="audiobook-icon">🎧</td>
               <td class="audiobook-title">
                 <span class="clickable-title" title="${displayTitle}">
@@ -281,10 +291,10 @@ function displayAudiobooks(audiobooks) {
               <td class="audiobook-narrator">${audiobook.narrator || 'Desconocido'}</td>
               <td class="audiobook-duration">${audiobook.duracion || audiobook.duration || 'N/A'}</td>
               <td class="audiobook-action">
-                <button class="play-btn" onclick="playAudiobook('${fileName}')" title="Reproducir">
+                <button class="play-btn" onclick="playAudiobook('${filePath}')" title="Reproducir">
                   ▶
                 </button>
-                <button class="info-btn" onclick="showAudiobookInfo('${fileName}')" title="Información">
+                <button class="info-btn" onclick="showAudiobookInfo('${filePath}')" title="Información">
                   ℹ️
                 </button>
               </td>
@@ -294,7 +304,7 @@ function displayAudiobooks(audiobooks) {
       </tbody>
     </table>
   `;
-  
+
   // Añadir event listeners a los títulos clicables
   document.querySelectorAll('.clickable-title').forEach(title => {
     title.addEventListener('click', (e) => {
@@ -324,22 +334,21 @@ async function playAudiobook(audiobookPath) {
  */
 async function showAudiobookInfo(audiobookPath) {
   try {
-    // Buscar el audiolibro en la lista
-    const audiobook = audiobooksList.find(a => 
-      (a.archivo || a.path || a) === audiobookPath
-    );
-    
-    if (!audiobook) {
-      showNotification('❌ Error', 'No se encontró información del audiolibro');
-      return;
-    }
+    // Buscar el audiolibro en la lista - soportar formato catálogo NAS y legacy
+    const audiobook = audiobooksList.find(a => {
+      const aPath = a.fullRelpath || a.relpath || a.archivo || a.path || a;
+      return aPath === audiobookPath;
+    });
 
-    const title = audiobook.titulo || audiobook.title || extractTitle(audiobookPath);
-    const author = audiobook.autor || audiobook.author || 'Autor desconocido';
-    const narrator = audiobook.narrator || 'Narrador desconocido';
-    const duration = audiobook.duracion || audiobook.duration || 'Duración desconocida';
-    const format = audiobookPath.split('.').pop()?.toUpperCase() || 'MP3';
-    
+    // Extraer nombre de archivo del path
+    const fileName = audiobookPath.split('/').pop() || audiobookPath;
+
+    const title = audiobook?.titulo || audiobook?.title || extractTitle(fileName);
+    const author = audiobook?.autor || audiobook?.author || 'Autor desconocido';
+    const narrator = audiobook?.narrator || 'Narrador desconocido';
+    const duration = audiobook?.duracion || audiobook?.duration || 'Duración desconocida';
+    const format = fileName.split('.').pop()?.toUpperCase() || 'MP3';
+
     // Buscar información adicional en servicios externos
     let additionalInfo = '';
     try {
@@ -349,7 +358,7 @@ async function showAudiobookInfo(audiobookPath) {
     }
 
     showAudiobookModal(title, author, narrator, duration, format, additionalInfo, audiobookPath);
-    
+
   } catch (error) {
     console.error('Error mostrando información:', error);
     showNotification('❌ Error', 'Error al obtener información del audiolibro');
@@ -798,10 +807,12 @@ async function openAudiobook(audiobookPath) {
  * Obtener URL del audiolibro
  */
 async function getAudiobookUrl(audiobookPath) {
-  console.log('🎵 Solicitando URL firmada para audiolibro:', audiobookPath);
-
-  const objectPath = `AUDIOLIBROS/${audiobookPath}`;
-  return storageService.getSignedUrl(objectPath, 'audiobook');
+  console.log('🎵 Descargando audiolibro vía downloadProtectedFile:', audiobookPath);
+  const path = audiobookPath?.path || audiobookPath;
+  const lowerPath = path?.toLowerCase() || '';
+  const relpath = lowerPath.startsWith('audiolibros/') ? path : `audiolibros/${path}`;
+  const blob = await downloadProtectedFile(relpath);
+  return URL.createObjectURL(blob);
 }
 
 /**
@@ -1252,16 +1263,19 @@ function showLoader(show) {
  */
 function searchAudiobooks(query) {
   const filtered = audiobooksList.filter(audiobook => {
-    const title = (audiobook.titulo || audiobook.title || extractTitle(audiobook)).toLowerCase();
+    // Soportar formato catálogo NAS (name) y formato legacy (titulo, archivo)
+    const fileName = audiobook.name || audiobook.archivo || audiobook.path || '';
+    const title = (audiobook.titulo || audiobook.title || extractTitle(fileName)).toLowerCase();
     const author = (audiobook.autor || audiobook.author || '').toLowerCase();
     const narrator = (audiobook.narrator || '').toLowerCase();
     const searchTerm = query.toLowerCase();
-    
-    return title.includes(searchTerm) || 
-           author.includes(searchTerm) || 
-           narrator.includes(searchTerm);
+
+    return title.includes(searchTerm) ||
+           author.includes(searchTerm) ||
+           narrator.includes(searchTerm) ||
+           fileName.toLowerCase().includes(searchTerm);
   });
-  
+
   displayAudiobooks(filtered);
 }
 
