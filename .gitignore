@@ -38,3 +38,7 @@ comics*.json
 # Data directories
 public/data/
 /data/
+
+# Server backend
+server/.env
+server/node_modules/

@@ -13,7 +13,9 @@
     "serve": "firebase serve",
     "convert:cbr": "node scripts/convert-cbr-to-cbz.js",
     "generate:comics-json": "node scripts/generate-comics-json.js",
-    "generate:stats": "node scripts/generate-content-stats.cjs"
+    "generate:stats": "node scripts/generate-content-stats.cjs",
+    "docker:up": "cd server && docker compose up -d --build",
+    "docker:down": "cd server && docker compose down"
   },
   "dependencies": {
     "astro": "^5.16.0",
