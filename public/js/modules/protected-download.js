@@ -6,9 +6,13 @@
 import { auth } from '../firebase-config.js';
 
 // URL base del servidor de almacenamiento Nginx
-// Esta URL es pública (la autenticación es via Bearer token en cada request)
-// TODO: En producción usar 'https://storage.lecturapp.es' cuando CORS esté configurado en Cloudflare
-const BASE = 'https://servidorix.tail380b60.ts.net';
+// Se lee de la config generada desde .env (PUBLIC_STORAGE_BASE_URL)
+import { storageBaseUrl } from '../firebase-config.js';
+
+if (!storageBaseUrl) {
+  throw new Error('PUBLIC_STORAGE_BASE_URL no configurada en .env. No se puede acceder al storage.');
+}
+const BASE = storageBaseUrl;
 
 /**
  * Devuelve la URL absoluta protegida (sin llamar a backend).

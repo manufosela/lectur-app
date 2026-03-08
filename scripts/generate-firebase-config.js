@@ -54,6 +54,9 @@ firebase.initializeApp(firebaseConfig);
 
 // Analytics deshabilitado completamente
 
+// URL base del servidor de almacenamiento (configurable desde .env)
+export const storageBaseUrl = "${process.env.PUBLIC_STORAGE_BASE_URL || 'https://storage.lecturapp.es'}";
+
 // Exportar funciones de base de datos y autenticación
 export const database = firebase.database();
 export const auth = firebase.auth();

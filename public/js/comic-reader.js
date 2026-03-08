@@ -68,8 +68,14 @@ async function loadComics() {
       console.log(`📚 Catálogo cargado: ${counts.comics} cómics`);
     }
 
+    // Debug: ver qué devuelve getCatalog
+    console.log('📂 comicsCatalog keys:', comicsCatalog ? Object.keys(comicsCatalog) : 'null');
+    console.log('📂 comicsCatalog.items?', comicsCatalog?.items?.length || 'no items');
+
     // Construir estructura de carpetas desde el catálogo y guardar en variable global
     comicsStructure = buildFolderStructureFromCatalog(comicsCatalog);
+
+    console.log('📂 comicsStructure:', Object.keys(comicsStructure.folders).length, 'carpetas');
 
     // Mostrar vista de carpetas principales
     displayFolderView(comicsStructure);
@@ -83,27 +89,34 @@ async function loadComics() {
 
 /**
  * Construir estructura de carpetas desde el catálogo del NAS
- * Convierte la estructura plana del catálogo a la estructura jerárquica esperada
+ * Convierte la estructura del catálogo a la estructura jerárquica esperada
  */
 function buildFolderStructureFromCatalog(catalog) {
   if (!catalog || !catalog.items) {
+    console.warn('⚠️ Catálogo vacío o sin items');
     return { folders: {}, comics: [] };
   }
 
+  console.log('📂 Procesando catálogo con', catalog.items.length, 'items en raíz');
+  // Debug: mostrar estructura completa de primeros items
+  console.log('📂 Primeros 3 items (full):', JSON.stringify(catalog.items.slice(0, 3), null, 2));
+
   const structure = { folders: {}, comics: [] };
 
-  function processItems(items, targetStructure) {
+  function processItems(items, targetStructure, depth = 0) {
+    if (!Array.isArray(items)) return;
+
     for (const item of items) {
       if (item.type === 'dir') {
         // Es una carpeta
         targetStructure.folders[item.name] = { folders: {}, comics: [] };
         if (item.items && item.items.length > 0) {
-          processItems(item.items, targetStructure.folders[item.name]);
+          processItems(item.items, targetStructure.folders[item.name], depth + 1);
         }
       } else if (item.type === 'file') {
         // Es un archivo de cómic
-        const ext = (item.ext || '').toLowerCase();
-        if (ext === '.cbz' || ext === '.cbr') {
+        const ext = (item.ext || item.name?.split('.').pop() || '').toLowerCase().replace('.', '');
+        if (ext === 'cbz' || ext === 'cbr') {
           targetStructure.comics.push(item.name);
         }
       }
@@ -111,6 +124,9 @@ function buildFolderStructureFromCatalog(catalog) {
   }
 
   processItems(catalog.items, structure);
+
+  console.log('📂 Estructura construida:', Object.keys(structure.folders).length, 'carpetas,', structure.comics.length, 'comics en raíz');
+
   return structure;
 }
 
@@ -400,7 +416,7 @@ async function openComic(comicPath) {
     showLoader(false);
   } catch (error) {
     console.error('Error abriendo cómic:', error);
-    alert('Error al abrir el cómic: ' + error.message);
+    showErrorToast('Error al abrir el cómic: ' + error.message);
     showLoader(false);
   }
 }
@@ -549,9 +565,6 @@ function loadPage(index) {
   
   // Actualizar miniaturas si están visibles
   updateThumbnails();
-  
-  // Guardar progreso
-  saveProgress();
 }
 
 /**
@@ -712,15 +725,56 @@ function closeViewer() {
 }
 
 /**
- * Búsqueda de cómics
+ * Búsqueda de cómics en la estructura jerárquica
  */
 function searchComics(query) {
-  const filtered = comicsList.filter(comic => {
-    const title = (comic.title || comic).toLowerCase();
-    return title.includes(query.toLowerCase());
-  });
-  
-  displayComics(filtered);
+  if (!query.trim()) {
+    let targetStructure = comicsStructure;
+    for (const pathPart of currentPath) {
+      if (targetStructure && targetStructure.folders) {
+        targetStructure = targetStructure.folders[pathPart];
+      }
+    }
+    const folderName = currentPath[currentPath.length - 1] || null;
+    displayFolderView(targetStructure, folderName);
+    return;
+  }
+
+  const normalizedQuery = query.toLowerCase();
+  const results = { folders: {}, comics: [] };
+
+  function searchInStructure(structure) {
+    if (structure.folders) {
+      Object.entries(structure.folders).forEach(([name, data]) => {
+        if (name.toLowerCase().includes(normalizedQuery)) {
+          results.folders[name] = data;
+        }
+        searchInStructure(data);
+      });
+    }
+    if (structure.comics) {
+      structure.comics.forEach(comic => {
+        const comicName = typeof comic === 'string' ? comic : comic.filename;
+        if (comicName.toLowerCase().includes(normalizedQuery)) {
+          results.comics.push(comic);
+        }
+      });
+    }
+  }
+
+  searchInStructure(comicsStructure);
+  displayFolderView(results, `Resultados: "${query}"`);
+}
+
+/**
+ * Mostrar mensaje de error tipo toast
+ */
+function showErrorToast(message) {
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  toast.style.cssText = 'position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#dc3545;color:white;padding:1rem 2rem;border-radius:8px;z-index:3000;font-size:0.9rem;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:90vw;text-align:center;';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
 }
 
 // Event listeners
