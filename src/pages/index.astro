@@ -3,93 +3,60 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="LecturAPP">
-  <!-- Control inmediato de UI inicial -->
-  <script>
-    (function() {
-      // Flag para determinar qué pantalla mostrar inmediatamente
-      let isAuthenticated = false;
-      
-      try {
-        // Verificar si hay estado de autenticación guardado
-        isAuthenticated = localStorage.getItem('lectur-app-auth-state') === 'authenticated';
-      } catch (error) {
-        console.warn('Error accediendo a localStorage:', error);
-        isAuthenticated = false;
-      }
-      
-      // Aplicar estilos inmediatamente basado en el flag
-      document.addEventListener('DOMContentLoaded', function() {
-        const loginScreen = document.getElementById('login-screen');
-        const categoryMenu = document.getElementById('category-menu');
-        
-        if (isAuthenticated) {
-          loginScreen.style.display = 'none';
-          categoryMenu.style.display = 'flex';
-          console.log('🎯 Mostrando menú directamente - usuario previamente autenticado');
-        } else {
-          loginScreen.style.display = 'flex';
-          categoryMenu.style.display = 'none';
-          console.log('🔑 Mostrando login - no hay estado de autenticación');
-        }
-      });
-    })();
-  </script>
-
   <div class="container">
-    
-    <!-- Pantalla de Login -->
-    <div id="login-screen" class="login-screen" style="display: none;">
-      <div class="login-container">
-        <div class="login-header">
-          <img class="login-logo" src="/images/logo64x64.png" alt="LecturAPP" />
-          <h1 class="login-title">LecturAPP</h1>
-          <p class="login-subtitle">Biblioteca digital multimedia</p>
+
+    <!-- Pantalla de Bienvenida -->
+    <div id="welcome-screen" class="welcome-screen">
+      <div class="welcome-container">
+        <div class="welcome-header">
+          <img class="welcome-logo" src="/images/logo64x64.png" alt="LecturAPP" />
+          <h1 class="welcome-title">LecturAPP</h1>
+          <p class="welcome-subtitle">Biblioteca digital multimedia</p>
         </div>
-        
-        <div class="login-content">
-          <p class="login-description">Inicia sesión para acceder a tu biblioteca personal</p>
-          
-          <button id="google-login-btn" class="google-login-btn">
-            <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continuar con Google
-          </button>
-          
-          <div id="login-error" class="login-error hidden">
-            <p>Acceso denegado. Tu cuenta no está autorizada para usar esta aplicación.</p>
+
+        <div class="welcome-content">
+          <p class="welcome-description">
+            Tu biblioteca personal de libros, audiolibros y cómics.
+            Lee EPUB, escucha audiolibros y disfruta de tus cómics favoritos
+            directamente desde el navegador.
+          </p>
+
+          <div class="welcome-features">
+            <div class="welcome-feature">
+              <span class="feature-icon">📚</span>
+              <span>Libros EPUB y PDF</span>
+            </div>
+            <div class="welcome-feature">
+              <span class="feature-icon">🎧</span>
+              <span>Audiolibros MP3</span>
+            </div>
+            <div class="welcome-feature">
+              <span class="feature-icon">💬</span>
+              <span>Cómics CBZ</span>
+            </div>
           </div>
+
+          <button id="enter-btn" class="enter-btn">Entrar a la biblioteca</button>
         </div>
       </div>
     </div>
-    
+
     <!-- Menú Principal de Categorías -->
-    <div id="category-menu" class="category-menu" style="display: flex;">
+    <div id="category-menu" class="category-menu" style="display: none;">
       <div class="category-container">
         <header class="category-header">
           <img class="logo clickable-logo" src="/images/logo64x64.png" alt="LecturAPP" title="Inicio" />
           <h1 class="title">LecturAPP</h1>
           <div class="header-actions">
-            <span id="menu-user-email" class="user-email"></span>
             <button id="menu-theme-toggle" class="theme-toggle" title="Cambiar tema">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="5"></circle>
                 <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
               </svg>
             </button>
-            <button id="menu-logout-btn" class="logout-btn" title="Cerrar sesión">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16,17 21,12 16,7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-            </button>
           </div>
         </header>
-        
+
         <div class="category-content">
           <h2 class="category-title">Selecciona una categoría</h2>
           <div class="category-grid">
