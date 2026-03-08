@@ -25,3 +25,16 @@ public/js/firebase-config.js
 
 # jetbrains setting folder
 .idea/
+
+# Firebase debug and cache files
+firebase-debug.log
+.firebase/
+
+# Generated data files (comics, Firebase exports)
+firebase_*.json
+comics*.json
+!firebase.json
+
+# Data directories
+public/data/
+/data/

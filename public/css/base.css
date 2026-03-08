@@ -1,0 +1,152 @@
+/* Base CSS - Reemplazo de Pico CSS */
+
+/* Reset básico */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Variables CSS */
+:root {
+  --primary: #1976d2;
+  --primary-hover: #1565c0;
+  --secondary: #757575;
+  --secondary-hover: #616161;
+  --secondary-inverse: white;
+  --bg-primary: #fafafa;
+  --bg-secondary: #f5f5f5;
+  --bg-header: #1976d2;
+  --bg-card: white;
+  --bg-history: #f0f8ff;
+  --text-primary: #212121;
+  --text-header: white;
+  --text-muted: #757575;
+  --text-link: #1976d2;
+  --muted-color: #757575;
+  --muted-border-color: #e0e0e0;
+  --table-border-color: #e0e0e0;
+  --table-row-stripped-background-color: #f5f5f5;
+  --card-background-color: white;
+  --shadow-card: 0 2px 4px rgba(0,0,0,0.1);
+  --border-history: #b3d9ff;
+}
+
+/* Typography */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Forms */
+input, select, textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--muted-border-color);
+  border-radius: 4px;
+  font-size: 1rem;
+  background: var(--card-background-color);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+small {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Buttons */
+button, input[type="submit"] {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background: var(--primary);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover, input[type="submit"]:hover {
+  background: var(--primary-hover);
+}
+
+/* Grid system básico */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Details/Summary */
+details {
+  margin-bottom: 1rem;
+}
+
+summary {
+  cursor: pointer;
+  padding: 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+details[open] summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* Tables básicas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--table-border-color);
+  text-align: left;
+}
+
+th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+}
+
+/* Utilities */
+.hidden {
+  display: none !important;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
