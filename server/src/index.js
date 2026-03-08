@@ -14,6 +14,10 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 
+// Routes
+const { createCatalogRouter } = require('./routes/catalog');
+app.use('/api/catalog', createCatalogRouter(pool));
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
