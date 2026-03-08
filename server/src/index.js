@@ -15,8 +15,17 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+const { requireAuth } = require('./middleware/auth');
+const { createAuthRouter } = require('./routes/auth');
 const { createCatalogRouter } = require('./routes/catalog');
-app.use('/api/catalog', createCatalogRouter(pool));
+const { createFilesRouter } = require('./routes/files');
+const { createHistoryRouter } = require('./routes/history');
+
+const { router: authRouter } = createAuthRouter(pool);
+app.use('/api/auth', authRouter);
+app.use('/api/catalog', requireAuth, createCatalogRouter(pool));
+app.use('/api/files', requireAuth, createFilesRouter(process.env.NAS_MOUNT_PATH));
+app.use('/api/history', createHistoryRouter(pool));
 
 // Health check
 app.get('/api/health', async (req, res) => {
