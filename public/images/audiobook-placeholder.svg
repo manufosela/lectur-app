@@ -1,0 +1,37 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="audioGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D2691E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fondo del audiolibro -->
+  <rect width="200" height="200" fill="url(#audioGrad)" rx="15" ry="15"/>
+  
+  <!-- Círculo principal del reproductor -->
+  <circle cx="100" cy="100" r="60" fill="none" stroke="white" stroke-width="3" opacity="0.8"/>
+  <circle cx="100" cy="100" r="45" fill="rgba(255,255,255,0.1)" stroke="white" stroke-width="2" opacity="0.6"/>
+  
+  <!-- Botón de play en el centro -->
+  <circle cx="100" cy="100" r="25" fill="white" opacity="0.9"/>
+  <polygon points="92,85 92,115 118,100" fill="#D2691E"/>
+  
+  <!-- Ondas de sonido -->
+  <path d="M 130 80 Q 140 85 140 100 Q 140 115 130 120" 
+        fill="none" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 145 70 Q 160 80 160 100 Q 160 120 145 130" 
+        fill="none" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  <path d="M 70 80 Q 60 85 60 100 Q 60 115 70 120" 
+        fill="none" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 55 70 Q 40 80 40 100 Q 40 120 55 130" 
+        fill="none" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  
+  <!-- Auriculares decorativos -->
+  <ellipse cx="70" cy="45" rx="15" ry="20" fill="white" opacity="0.8" transform="rotate(-20 70 45)"/>
+  <ellipse cx="130" cy="45" rx="15" ry="20" fill="white" opacity="0.8" transform="rotate(20 130 45)"/>
+  <path d="M 75 35 Q 100 25 125 35" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  
+  <!-- Texto "AUDIO" -->
+  <text x="100" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">AUDIOLIBRO</text>
+</svg>

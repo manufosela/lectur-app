@@ -1,0 +1,50 @@
+---
+export interface Props {
+  content?: string;
+}
+
+const { content = "Biblioteca digital" } = Astro.props;
+---
+
+<footer class="app-footer">
+  <div class="footer-content">
+    <p>&copy; <span id="current-year">2024</span> LecturAPP - {content}</p>
+    <p class="footer-info">Creado con ❤️ para los amantes de la lectura</p>
+  </div>
+</footer>
+
+<style>
+  .app-footer {
+    background: var(--muted-border-color);
+    color: var(--muted-color);
+    text-align: center;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--table-border-color);
+    margin-top: auto;
+  }
+
+  .footer-content {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .footer-content p {
+    margin: 0.2rem 0;
+    font-size: 0.8rem;
+  }
+
+  .footer-info {
+    color: var(--muted-color);
+    font-style: italic;
+  }
+</style>
+
+<script>
+  // Actualizar año del footer
+  document.addEventListener('DOMContentLoaded', () => {
+    const yearEl = document.getElementById('current-year');
+    if (yearEl) {
+      yearEl.textContent = new Date().getFullYear().toString();
+    }
+  });
+</script>
