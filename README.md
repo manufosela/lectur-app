@@ -2,6 +2,8 @@
 
 Biblioteca digital personal para leer libros EPUB, escuchar audiolibros y leer cómics CBZ/CBR desde el navegador, con historial de lectura por usuario.
 
+> Este repositorio está gobernado por [Karajan Code](https://karajancode.com). Antes de contribuir, lee [Repositorio gobernado por Karajan Code](#repositorio-gobernado-por-karajan-code).
+
 ## Estado del proyecto
 
 El proyecto está en plena transición de arquitectura:
@@ -168,14 +170,56 @@ Para pararlo: `npm run docker:down`.
 └── firebase.json
 ```
 
-Más detalle en [ARCHITECTURE.md](ARCHITECTURE.md) y en [AGENTS.md](AGENTS.md).
+Más detalle en [ARCHITECTURE.md](ARCHITECTURE.md) y, para agentes de IA, en [AGENTS.md](AGENTS.md).
+
+## Repositorio gobernado por Karajan Code
+
+Este repositorio está gobernado por [Karajan Code](https://karajancode.com) (`kj`). Sus reglas viven en el propio repositorio (`.karajan/` y `.github/workflows/kj-*`) y se comprueban en tu máquina al commitear y en la CI de cada Pull Request.
+
+### Qué se comprueba y dónde
+
+| Regla | En tu máquina (git hooks) | En la CI de la PR |
+|-------|---------------------------|-------------------|
+| Nada de commits directos en `main` | Sí | Protección de rama |
+| Conventional Commits, asunto en minúscula, sin punto final, líneas de 100 caracteres como máximo | Sí | Sí |
+| Sin atribución a IA en commits, título ni descripción de la PR | Sí | Sí |
+| Sin credenciales ni datos personales en lo que añades | Con `kj` instalado | Sí |
+| Lint de `functions/` si lo tocas | Sí | Sí |
+| `npm ci` funciona | No | Sí |
+| Cada commit de la PR tiene una revisión cruzada hecha por otra IA, ligada a su diff exacto | Con `kj` instalado | Sí |
+
+### Activa los hooks en tu clon
+
+Git no activa los hooks al clonar. Hazlo una vez, desde la raíz del repo:
+
+```bash
+git config core.hooksPath .karajan/hooks
+```
+
+Sin `kj` instalado, los hooks aplican las reglas que no dependen de él y avisan de las que se saltan.
+
+### Dos formas de trabajar
+
+**Con Karajan (recomendado).** Instala `kj` con [la guía de instalación](https://karajancode.com/docs/getting-started/installation) y declara tu identidad con `kj identity set`. Antes de cada commit, pide la revisión cruzada con `kj review --staged`. Al abrir la PR, publica los veredictos con `kj review --publish-pr <número>`. Necesitas un agente de IA de línea de comandos y Docker para SonarQube.
+
+**A mano, sin Karajan.** Puedes trabajar sin instalar nada más, pero:
+
+- Cumple tú las reglas de la tabla: los hooks y la CI rechazan lo que no las cumpla.
+- La comprobación de revisión cruzada de la CI no pasará sola. El mantenedor revisará tu PR con Karajan y publicará los veredictos antes de mergearla: cuenta con ese paso extra en cada PR.
+- Si añades commits después de esa revisión, hay que revisarlos otra vez.
+
+### Limitaciones
+
+- No uses `--no-verify` para saltarte los hooks: la CI comprueba lo mismo y la PR no se podrá mergear.
+- Los ficheros de gobierno (`.karajan/hooks/`, `.github/workflows/kj-*`) no se editan a mano: los regenera `kj harden` y su cambio lo sella una persona.
+- PRs pequeñas: Karajan avisa a partir de 200 líneas netas de código (la documentación no cuenta).
 
 ## Cómo contribuir
 
 1. Parte siempre de `main` actualizada y crea una rama por tarea: `feat/<descripcion>`, `fix/<descripcion>` o `docs/<descripcion>`. Si la tarea tiene identificador (por ejemplo `LCT-TSK-0070`), ponlo en el nombre de la rama.
 2. Haz commits pequeños con [Conventional Commits](https://www.conventionalcommits.org/es/): `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`.
 3. Abre una Pull Request contra `main`. Nunca hagas push directo a `main`.
-4. Una PR, un propósito, y mejor por debajo de 300 líneas cambiadas.
+4. Una PR, un propósito, y por debajo de 200 líneas netas de código.
 5. En la descripción de la PR explica qué cambia, cómo lo has probado y añade capturas si toca la interfaz.
 
 Pautas de código:
@@ -184,7 +228,7 @@ Pautas de código:
 - El código nuevo del frontend va en `public/js/modules/`.
 - Nada de `alert()`, `confirm()` ni `prompt()`: usa los modales de la aplicación.
 
-Pruebas: todavía no hay tests automáticos ni CI. Antes de abrir la PR, ejecuta `npm run build && npm run preview` y prueba a mano el login, el logout y abrir un libro, un audiolibro y un cómic. Si tocas el backend, prueba los endpoints afectados con `curl`.
+Pruebas: todavía no hay tests automáticos (la CI solo aplica las reglas de Karajan). Antes de abrir la PR, ejecuta `npm run build && npm run preview` y prueba a mano el login, el logout y abrir un libro, un audiolibro y un cómic. Si tocas el backend, prueba los endpoints afectados con `curl`.
 
 Seguridad, sobre todo porque el repositorio es público:
 
