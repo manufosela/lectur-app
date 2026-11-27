@@ -1,8 +1,10 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Firebase Storage is not used: content is served by the Nginx storage server.
+    // Deny all client access. Admin SDK (Cloud Functions) bypasses these rules.
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
