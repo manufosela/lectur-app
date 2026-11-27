@@ -1,0 +1,81 @@
+{
+  "kj_version": "5.40.0",
+  "generated_at": "2026-11-27T21:51:07.617Z",
+  "generation": {
+    "profile": "standard",
+    "cmds": {
+      "roots": [
+        {
+          "dir": ".",
+          "language": "typescript"
+        },
+        {
+          "dir": "functions",
+          "language": "javascript",
+          "lint": "npm run -s lint"
+        }
+      ]
+    },
+    "baseBranch": "main",
+    "commitConvention": "conventional"
+  },
+  "who": {
+    "gh": "manufosela",
+    "grade": "declarada"
+  },
+  "files": [
+    {
+      "file": ".claude/settings.local.json",
+      "sha256": "d853b2e131902f3820d3ba6814a1d85e7cd73bc36fe85f8bff658dab1eb6dfbd",
+      "local": true
+    },
+    {
+      "file": ".github/workflows/kj-no-ai-attribution.yml",
+      "sha256": "3f95380ace30dab247f1e00db14ec6880e577b2abfeee67cafbb546fb933629d"
+    },
+    {
+      "file": ".github/workflows/kj-quality.yml",
+      "sha256": "948968ae2cd86f83b18eb7d8dc4e067fca7adac0ea49ea0da6d4390cc6a6b7db"
+    },
+    {
+      "file": ".github/workflows/kj-secrets.yml",
+      "sha256": "5560f08df26c448e35449eea5be84f53fdece15fb30a91494795d18107b56d48"
+    },
+    {
+      "file": ".github/workflows/kj-verdicts.yml",
+      "sha256": "98b20e8de6a912c0e0277c4752b95d2dbd6aff3ba7b3d1a0be00fb115d8ba68a"
+    },
+    {
+      "file": ".karajan/hooks/commit-msg",
+      "sha256": "e740e2d05d40fe5ae7a776c4ae94979f602dd091ac4b5fc29ec2f43d8d7365e5"
+    },
+    {
+      "file": ".karajan/hooks/post-merge",
+      "sha256": "419b4def5af5aa82c392320d00f085ab3f0b92f2b31451671c7b204e57907d48"
+    },
+    {
+      "file": ".karajan/hooks/pre-commit",
+      "sha256": "0b49ae4d7530ac2b01597b43315fb5883b2766d8c060c8a64f38e6ac35949b7f"
+    },
+    {
+      "file": ".karajan/hooks/pre-push",
+      "sha256": "d1a79ab508d60d38098fe2f01c8efce51d1586ed63f5d3fea97fbfa08d51fd12"
+    },
+    {
+      "file": ".karajan/hooks/prepare-commit-msg",
+      "sha256": "6ecb44d2f0d9ac9d392aed85cc0bae5255d814058a241f1d576a0ce6107b6f06"
+    }
+  ],
+  "signature": {
+    "cid": "164800c60d15c318e8269019d5fe1594",
+    "nonce": "3638bda71d436ac77640fb3fa4186435",
+    "project": "manufosela/lectur-app",
+    "filesHash": "836aab12059979af26da499c70af3ed9c6352b94bb4d3b9a4ad584a21a88e72f",
+    "v": 2,
+    "kjVersion": "5.40.0",
+    "issuedMs": 1795816257457,
+    "expiresMs": 1795816407457,
+    "signer": "EgMc2b95g5nUh8e6LDCeLjv7G69cQaszUCIy+3aLpPQ=",
+    "signature": "JJ/bXPlVunXpLH01jSPE6oO8jeWeWZ0Zbgx8Q/zQ0SgO1finP0ExRZ3ZSNAixf3mnDO5XGH2htq4aNc5EPX0Cw=="
+  }
+}
