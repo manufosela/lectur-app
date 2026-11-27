@@ -1,358 +1,196 @@
-# LecturAPP 📚
+# LecturAPP
 
-> **Biblioteca digital multimedia con soporte para EPUB, audiolibros y cómics**
+Biblioteca digital personal para leer libros EPUB, escuchar audiolibros y leer cómics CBZ/CBR desde el navegador, con historial de lectura por usuario.
 
-LecturAPP es una aplicación web moderna desarrollada con Astro y Firebase que proporciona una experiencia completa de biblioteca digital. Soporta tres tipos de contenido: libros EPUB, audiolibros MP3 y cómics CBZ/CBR, todo con autenticación segura y seguimiento de progreso personalizado.
+## Estado del proyecto
 
-## ✨ Características Principales
+El proyecto está en plena transición de arquitectura:
 
-### 📖 **Libros EPUB**
-- **Biblioteca masiva**: 126,259 libros EPUB disponibles
-- **Lector integrado**: Powered by EPUB.js para lectura fluida en navegador
-- **Búsqueda avanzada**: Por título, autor y navegación alfabética
-- **Progreso de lectura**: Seguimiento automático con Firebase
-- **Historial personalizado**: Últimos libros leídos por usuario
+| Pieza | Estado | Tecnología |
+|-------|--------|------------|
+| Frontend (`src/`, `public/`) | En producción | Astro 5 (sitio estático), Pico CSS, EPUB.js, JSZip |
+| Login, catálogo e historial | En producción | Firebase Auth (Google) y Realtime Database |
+| Ficheros de contenido | En producción | Servidor Nginx propio que valida el ID token de Firebase |
+| Backend propio (`server/`) | En desarrollo, aún no conectado al frontend | Express + PostgreSQL 16 (`pg_trgm`) en Docker |
 
-### 🎧 **Audiolibros**
-- **Colección extensa**: 6,121 audiolibros MP3 con metadatos
-- **Reproductor personalizado**: Controles avanzados con HTML5 Audio
-- **Marcadores y velocidad**: Ajuste de velocidad de reproducción y bookmarks
-- **Sincronización**: Progreso guardado automáticamente por usuario
-- **Interfaz intuitiva**: Diseño optimizado para listening sessions
+La idea es que el backend de `server/` sustituya a Firebase (tareas LCT-TSK-0068 y LCT-TSK-0069). Hasta entonces, el frontend sigue dependiendo de Firebase.
 
-### 💬 **Cómics**
-- **Formatos soportados**: CBZ y CBR archives
-- **Lector dedicado**: Extracción con JSZip y navegación página por página
-- **Interfaz completa**: Modo pantalla completa para lectura inmersiva
+## Requisitos
 
-### 🔐 **Autenticación y Seguridad**
-- **Google OAuth**: Autenticación segura con Google
-- **Lista autorizada**: Control de acceso con whitelist de usuarios
-- **Sesiones persistentes**: Estado guardado para evitar re-logins
-- **Navegación fluida**: Sin flasheos de pantalla de login
+- **Node.js 20 o superior** (probado con Node 22) y npm.
+- **Git**.
+- **Docker** con Docker Compose v2, solo si vas a trabajar en el backend.
+- **Firebase CLI** (`npm install -g firebase-tools`), solo si vas a usar emuladores o desplegar.
+- Una **cuenta de Google** dada de alta como usuario autorizado (ver la sección siguiente).
 
-### 🎨 **Experiencia de Usuario**
-- **Responsive Design**: Diseño móvil-first con Pico CSS
-- **Tema dual**: Modo claro/oscuro persistente
-- **Navegación modular**: Páginas separadas por tipo de contenido
-- **Performance**: Servidor Nginx para entrega rápida de contenido
+## Qué tienes que pedir al mantenedor
 
-## 🏗️ Arquitectura Técnica
+El repositorio es público, así que nada de esto está en él. Pídelo antes de empezar:
 
-### **Frontend**
-- **Framework**: Astro 5.13.0 (Static Site Generator)
-- **Styling**: Pico CSS framework + custom styles
-- **JavaScript**: ES6 modules con arquitectura SOLID
-- **Content Readers**: EPUB.js, HTML5 Audio, JSZip
+| Qué | Para qué | Cómo se entrega |
+|-----|----------|-----------------|
+| Acceso de colaborador al repositorio | Crear ramas y abrir Pull Requests | Invitación de GitHub |
+| Fichero `.env` de la raíz | Configuración del cliente Firebase y URL del storage | Por un canal seguro, nunca por el repo ni por chat abierto |
+| Alta de tu email de Google como usuario autorizado | Sin ella, el login te rechaza y las reglas de la base de datos no te dejan leer | La hace el mantenedor en Firebase |
+| Acceso al storage de contenidos | Abrir libros, audiolibros y cómics desde `localhost` | Lo configura el mantenedor en el servidor Nginx |
+| Muestra del NAS con sus `_aquitengolalista.json` | Solo para el backend: indexar y servir contenido en local | Por un canal seguro |
 
-### **Backend & Database**
-- **Database**: Firebase Realtime Database (europa-west1)
-- **Authentication**: Firebase Auth con Google OAuth
-- **Hosting**: Firebase Hosting
-- **Storage**: Nginx static file server (`https://storage.lecturapp.es/`)
+El fichero `server/.env` del backend **no hace falta pedirlo**: genera el tuyo propio (ver más abajo).
 
-### **Storage Structure**
-```
-https://storage.lecturapp.es/
-├── LIBROS/          # 126,259 archivos EPUB
-├── AUDIOLIBROS/     # 6,121 archivos MP3  
-└── COMICS/          # Archivos CBZ/CBR
-```
+## Instalación del frontend
 
-### **Database Schema**
-```json
-{
-  "libros": ["libro1.epub", "libro2.epub", ...],
-  "audiolibros": ["audio1.mp3", "audio2.mp3", ...],
-  "comics": ["comic1.cbz", "comic2.cbr", ...],
-  "autores": ["Autor 1", "Autor 2", ...],
-  "librosPorAutor": {
-    "Autor_1": { "libro_123": "libro1.epub" }
-  },
-  "usuariosAutorizados": {
-    "email|com": true
-  },
-  "historialLectura": {
-    "user_key": {
-      "content_id": {
-        "bookPath": "path/to/content.epub",
-        "title": "Content Title",
-        "progress": 50,
-        "lastRead": "2024-01-01T00:00:00.000Z"
-      }
-    }
-  }
-}
-```
-
-## 🚀 Instalación y Desarrollo
-
-### **Prerrequisitos**
-- Node.js 18+ 
-- npm o yarn
-- Cuenta de Firebase
-- Acceso al servidor de contenido
-
-### **Configuración Inicial**
-
-1. **Clonar el repositorio**
 ```bash
-git clone <repository-url>
-cd lectur-app-astro
-```
-
-2. **Instalar dependencias**
-```bash
-npm install
-```
-
-3. **Configurar variables de entorno**
-```bash
-cp .env.example .env
-```
-
-Completar `.env` con las credenciales de Firebase:
-```bash
-# Firebase Client SDK (PUBLIC_ prefix required for Astro)
-PUBLIC_FIREBASE_API_KEY=your_api_key
-PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-PUBLIC_FIREBASE_DATABASE_URL=https://your_project.firebasedatabase.app
-PUBLIC_FIREBASE_PROJECT_ID=your_project
-PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-PUBLIC_FIREBASE_APP_ID=your_app_id
-```
-
-4. **Configurar Firebase Functions** (opcional)
-```bash
-cd functions
-npm install
-```
-
-5. **Configurar Upload Script** (para gestión de contenido)
-```bash
-cd upload-script
+git clone -b main https://github.com/manufosela/lectur-app.git
+cd lectur-app
 npm install
 cp .env.example .env
-# Completar con credenciales Firebase Admin y AWS
 ```
 
-### **Comandos de Desarrollo**
+Rellena `.env` con los valores que te haya pasado el mantenedor y arranca el servidor de desarrollo:
 
-#### **Aplicación Principal**
 ```bash
-# Servidor de desarrollo (localhost:4321)
 npm run dev
-
-# Build para producción
-npm run build
-
-# Preview del build
-npm run preview
-
-# Deploy a Firebase
-npm run deploy
-
-# Deploy solo hosting
-npm run deploy:hosting
-
-# Generar config de Firebase desde .env
-npm run generate:firebase-config
 ```
 
-#### **Firebase Functions**
+La aplicación queda en <http://localhost:4321>. Entra con tu cuenta de Google autorizada.
+
+`npm run dev` y `npm run build` generan antes `public/js/firebase-config.js` a partir de `.env`. Ese fichero está en `.gitignore`: no lo edites a mano ni lo subas. Si cambias `.env`, vuelve a arrancar o ejecuta `npm run generate:firebase-config`.
+
+### Variables de `.env`
+
+| Variable | Obligatoria | Descripción |
+|----------|-------------|-------------|
+| `PUBLIC_FIREBASE_API_KEY` | Sí | Configuración web del proyecto Firebase |
+| `PUBLIC_FIREBASE_AUTH_DOMAIN` | Sí | Ídem |
+| `PUBLIC_FIREBASE_DATABASE_URL` | Sí | URL de la Realtime Database |
+| `PUBLIC_FIREBASE_PROJECT_ID` | Sí | Ídem |
+| `PUBLIC_FIREBASE_STORAGE_BUCKET` | Sí | Ídem |
+| `PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sí | Ídem |
+| `PUBLIC_FIREBASE_APP_ID` | Sí | Ídem |
+| `PUBLIC_STORAGE_BASE_URL` | No | Servidor de contenidos. Por defecto `https://storage.lecturapp.es` |
+| `COMICS_DIR` | No | Carpeta local de cómics para `npm run generate:comics-json` |
+
+Las variables `PUBLIC_*` acaban en el JavaScript que se sirve al navegador: no pongas nunca ahí nada que sea secreto de verdad.
+
+## Backend (`server/`)
+
+API REST con Express y PostgreSQL que servirá el catálogo, los ficheros y el historial. Se ejecuta con Docker.
+
+### 1. Configura `server/.env`
+
 ```bash
-cd functions
-
-# Linting
-npm run lint
-
-# Emulador local
-npm run serve
-
-# Deploy functions
-npm run deploy
-
-# Ver logs
-npm run logs
+cd server
+cp .env.example .env
 ```
 
-#### **Gestión de Contenido**
+Edita `server/.env`:
+
+- `JWT_SECRET`: genera uno propio con `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Sin él, la API no arranca.
+- `POSTGRES_PASSWORD`: cualquier contraseña local.
+- `NAS_HOST_PATH`: carpeta de tu máquina con el contenido. Debe tener esta forma (las carpetas que falten se ignoran con un aviso):
+
+```
+<NAS_HOST_PATH>/
+├── LIBROS/        _aquitengolalista.json + ficheros .epub/.pdf
+├── AUDIOLIBROS/   _aquitengolalista.json + ficheros .mp3/.m4a/.m4b
+└── COMICS/        _aquitengolalista.json + ficheros .cbz/.cbr
+```
+
+Cada `_aquitengolalista.json` es un árbol `{ "items": [ { "name", "clean_name", "type": "file|dir", "relpath", "ext", "size_bytes", "children" } ] }` con rutas relativas a su carpeta.
+
+### 2. Arranca los contenedores
+
+Desde la raíz del repo:
+
 ```bash
-cd upload-script
-
-# Upload contenido
-npm run upload
-
-# Sincronizar con Firebase
-npm run sync
-
-# Verificar estado
-npm run check
+npm run docker:up
+curl http://localhost:3001/api/health
 ```
 
-## 📁 Estructura del Proyecto
+Levanta PostgreSQL (puerto `5433` del host) y la API (puerto `3001`). La primera vez que se crea el volumen se aplica el esquema de `server/sql/`. Para empezar de cero: `cd server && docker compose down -v`.
+
+### 3. Crea tu usuario e indexa el contenido
+
+```bash
+cd server
+docker compose exec api node src/seed.js <email> <nombre> <contraseña>
+docker compose exec api node src/indexer.js
+```
+
+El indexador lee los `_aquitengolalista.json` y rehace la tabla `catalog_items` entera.
+
+### Endpoints
+
+Todos menos `health` y `login` necesitan la cabecera `Authorization: Bearer <token>`, con el token que devuelve `login` (caduca en 24 h).
+
+| Método y ruta | Descripción |
+|---------------|-------------|
+| `GET /api/health` | Estado de la API y de la base de datos |
+| `POST /api/auth/login` | `{ email, password }` → `{ token, user }` |
+| `GET /api/auth/me` | Usuario actual |
+| `GET /api/catalog/search?q=&type=` | Búsqueda aproximada por nombre (`type`: `book`, `audiobook`, `comic`) |
+| `GET /api/catalog/browse/<ruta>` | Contenido de una carpeta |
+| `GET /api/catalog/<type>` y `/api/catalog/<type>/count` | Listado y recuento por tipo |
+| `GET /api/files/<type>/<ruta>` | Descarga del fichero, con soporte de `Range` para el audio |
+| `GET/POST /api/history`, `DELETE /api/history/<id>` | Historial y progreso de lectura |
+
+Para pararlo: `npm run docker:down`.
+
+## Scripts
+
+| Comando | Qué hace |
+|---------|----------|
+| `npm run dev` | Servidor de desarrollo de Astro |
+| `npm run build` | Build de producción en `dist/` |
+| `npm run preview` | Sirve el build para probarlo |
+| `npm run generate:firebase-config` | Regenera `public/js/firebase-config.js` desde `.env` |
+| `npm run convert:cbr` | Convierte cómics CBR a CBZ |
+| `npm run generate:comics-json` | Genera el JSON de cómics a partir de `COMICS_DIR` |
+| `npm run docker:up` / `docker:down` | Arranca o para el backend |
+| `npm run deploy` / `deploy:hosting` | Despliegue a Firebase (solo el mantenedor) |
+
+## Estructura
 
 ```
-lectur-app-astro/
 ├── src/
-│   ├── pages/
-│   │   ├── index.astro          # Login y menú principal
-│   │   ├── books.astro          # Biblioteca de libros
-│   │   ├── audiobooks.astro     # Biblioteca de audiolibros
-│   │   └── comics.astro         # Biblioteca de cómics
-│   └── layouts/
-│       └── Layout.astro         # Layout base compartido
+│   ├── pages/          index (login y menú), books, audiobooks, comics
+│   ├── layouts/        Layout.astro
+│   └── components/
 ├── public/
-│   ├── js/
-│   │   ├── modules/             # Módulos ES6 refactorizados
-│   │   │   ├── auth.js          # Servicio de autenticación
-│   │   │   ├── content.js       # Gestión de contenido
-│   │   │   ├── theme.js         # Gestión de temas
-│   │   │   ├── ui.js            # Utilidades de UI
-│   │   │   ├── navigation.js    # Navegación entre páginas
-│   │   │   └── books.js         # Funcionalidad específica de libros
-│   │   ├── app-refactored.js    # App principal refactorizada
-│   │   ├── books-refactored.js  # App de libros refactorizada
-│   │   ├── app.js               # App principal (legacy)
-│   │   ├── books.js             # App de libros (legacy)
-│   │   ├── audiobook-player.js  # Reproductor de audiolibros
-│   │   ├── comic-reader.js      # Lector de cómics
-│   │   └── firebase-config.js   # Config Firebase (auto-generado)
-│   ├── css/                     # Estilos personalizados
-│   └── images/                  # Recursos de imagen
-├── functions/                   # Firebase Cloud Functions
-├── upload-script/               # Herramientas de gestión de contenido
-├── scripts/                     # Scripts de build y utilidades
-├── firebase.json               # Configuración Firebase
-├── database.rules.json         # Reglas de database
-└── storage.rules              # Reglas de storage
+│   ├── js/modules/     Módulos ES: auth, content, books, navigation, catalog-loader,
+│   │                   protected-download, theme, ui
+│   ├── js/             app.js, books.js, audiobook-player.js, comic-reader.js
+│   └── css/, images/
+├── scripts/            Utilidades de línea de comandos
+├── server/             Backend Express + PostgreSQL (Docker)
+├── functions/          Cloud Functions (hoy solo un health check)
+├── database.rules.json Reglas de la Realtime Database
+└── firebase.json
 ```
 
-## 🔧 Arquitectura SOLID
+Más detalle en [ARCHITECTURE.md](ARCHITECTURE.md) y en [AGENTS.md](AGENTS.md).
 
-El proyecto ha sido refactorizado siguiendo principios SOLID:
+## Cómo contribuir
 
-### **Single Responsibility Principle (SRP)**
-- `AuthService`: Solo maneja autenticación
-- `ThemeService`: Solo maneja temas
-- `ContentService`: Solo maneja contenido
-- `UIService`: Solo maneja operaciones de UI
-- `NavigationService`: Solo maneja navegación
+1. Parte siempre de `main` actualizada y crea una rama por tarea: `feat/<descripcion>`, `fix/<descripcion>` o `docs/<descripcion>`. Si la tarea tiene identificador (por ejemplo `LCT-TSK-0070`), ponlo en el nombre de la rama.
+2. Haz commits pequeños con [Conventional Commits](https://www.conventionalcommits.org/es/): `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`.
+3. Abre una Pull Request contra `main`. Nunca hagas push directo a `main`.
+4. Una PR, un propósito, y mejor por debajo de 300 líneas cambiadas.
+5. En la descripción de la PR explica qué cambia, cómo lo has probado y añade capturas si toca la interfaz.
 
-### **Open/Closed Principle (OCP)**
-- Servicios extensibles para nuevas funcionalidades
-- Interfaz común para diferentes tipos de contenido
+Pautas de código:
 
-### **Liskov Substitution Principle (LSP)**
-- Servicios intercambiables que mantienen contratos
-- Implementaciones consistentes
+- JavaScript moderno con módulos ES, `const` por defecto y sin APIs obsoletas.
+- El código nuevo del frontend va en `public/js/modules/`.
+- Nada de `alert()`, `confirm()` ni `prompt()`: usa los modales de la aplicación.
 
-### **Interface Segregation Principle (ISP)**
-- Módulos específicos por funcionalidad
-- No dependencias innecesarias
+Pruebas: todavía no hay tests automáticos ni CI. Antes de abrir la PR, ejecuta `npm run build && npm run preview` y prueba a mano el login, el logout y abrir un libro, un audiolibro y un cómic. Si tocas el backend, prueba los endpoints afectados con `curl`.
 
-### **Dependency Inversion Principle (DIP)**
-- Inyección de dependencias entre servicios
-- Abstracción de implementaciones concretas
+Seguridad, sobre todo porque el repositorio es público:
 
-## 🛠️ Gestión de Contenido
+- No subas nunca `.env`, `server/.env`, `public/js/firebase-config.js` ni claves de cuentas de servicio.
+- No añadas emails ni otros datos personales a ficheros del repositorio.
 
-### **Añadir Nuevo Contenido**
+## Licencia
 
-1. **Libros EPUB**:
-```bash
-cd upload-script
-# Colocar archivos en directorio fuente
-npm run upload -- --type books
-```
-
-2. **Audiolibros MP3**:
-```bash
-cd upload-script  
-# Colocar archivos en directorio fuente
-npm run upload -- --type audiobooks
-```
-
-3. **Cómics CBZ/CBR**:
-```bash
-cd upload-script
-# Colocar archivos en directorio fuente  
-npm run upload -- --type comics
-```
-
-### **Sincronización Manual**
-```bash
-cd upload-script
-npm run sync
-```
-
-## 🔐 Autorización de Usuarios
-
-Los usuarios autorizados se gestionan en Firebase Database:
-
-```json
-{
-  "usuariosAutorizados": {
-    "usuario@ejemplo|com": true,
-    "otro@dominio|org": true
-  }
-}
-```
-
-**Nota**: Los puntos (.) en emails se reemplazan por pipes (|) para compatibilidad con Firebase.
-
-## 🚀 Deployment
-
-### **Firebase Hosting**
-```bash
-# Build y deploy completo
-npm run deploy
-
-# Solo hosting (después de build)
-npm run deploy:hosting
-```
-
-### **Variables de Entorno en Producción**
-Configurar las mismas variables en el entorno de producción:
-- Firebase Console → Project Settings → General
-- Variables de entorno del servidor de hosting
-
-## 📊 Métricas del Proyecto
-
-- **📚 Libros**: 126,259 archivos EPUB
-- **🎧 Audiolibros**: 6,121 archivos MP3  
-- **💬 Cómics**: Biblioteca en crecimiento
-- **👥 Usuarios**: Sistema de whitelist autorizada
-- **🌍 Hosting**: Firebase Hosting (Global CDN)
-- **📦 Storage**: Nginx server (Europa)
-
-## 🤝 Contribución
-
-### **Guías de Desarrollo**
-- Seguir arquitectura modular establecida
-- Mantener principios SOLID
-- Documentar nuevas funcionalidades
-- Probar en diferentes tipos de contenido
-
-### **Code Style**
-- ES6+ modules
-- Async/await sobre Promises
-- Descriptive naming
-- Single responsibility por función
-
-## 📄 Licencia
-
-Este proyecto es de uso privado. Todos los derechos reservados.
-
-## 🆘 Soporte
-
-Para issues y soporte:
-- Revisar documentación en `/CLAUDE.md`
-- Consultar arquitectura en `/ARCHITECTURE.md`
-- Logs en Firebase Console
-- Estado de servicios en `/status`
-
----
-
-**LecturAPP** - *Tu biblioteca digital completa* 📚🎧💬
+Uso privado. Todos los derechos reservados.
